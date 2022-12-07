@@ -4,7 +4,7 @@
 toolchain="gcc-hipsycl"
 builder_base_version="0.0.1"
 OS_tag="ubuntu:20.04"
-num_build_jobs="6"
+num_build_jobs="4"
 
 # Check for prerequisites
 if ! command -v docker-compose &> /dev/null
