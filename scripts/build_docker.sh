@@ -38,6 +38,9 @@ cd "$docker_dir"
 spack containerize > Dockerfile
 # Pre-generated Dockerfile doesn't allow for /opt/spack-environment already existing
 sed -i 's/mkdir/mkdir\ -p/' Dockerfile
+# Use a build cache for spack install
+sed -i 's|RUN\ cd /opt/spack-environment\ \&\&\ spack\ env\ activate\ .\ \&\&\ spack\ install|RUN\ --mount=type=cache,target=/opt/spack/var/spack/cache\ cd\ /opt/spack-environment\ \&\&\ spack\ env\ activate\ .\ \&\&\ spack\ install|' Dockerfile
+
 
 # Build with docker-compose
 docker-compose build
