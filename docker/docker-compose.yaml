@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  builder-base:
+    image: neso/env-builder-base:${BUILDER_BASE_VERSION:-0.0.1}
+    build:
+      context: ..
+      dockerfile: docker/builder-base/Dockerfile
+    pull_policy: never
+  neso-env:
+    image: neso/env:${ENV_VERSION:-0.0.1}
+    build:
+      context: .
+    container_name: neso-env
+    pull_policy: never

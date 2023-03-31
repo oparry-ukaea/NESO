@@ -37,3 +37,7 @@ example-runs
 **/*_xml/
 **/*.chk
 **/*.btr
+
+# Docker
+docker/Dockerfile
+docker/spack.yaml
