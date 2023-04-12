@@ -91,7 +91,7 @@ void SOLSystem::v_InitObject(bool DeclareField) {
   m_session->LoadParameter("Gamma", m_gamma, 1.4);
 
   // Setting up advection and diffusion operators
-  InitAdvection();
+  Init_advection();
 
   // Set up Forcing objects for source terms.
   m_forcing = SolverUtils::Forcing::Load(m_session, shared_from_this(),
@@ -109,7 +109,7 @@ SOLSystem::~SOLSystem() {}
 /**
  * @brief Create advection and diffusion objects for CFS
  */
-void SOLSystem::InitAdvection() {
+void SOLSystem::Init_advection() {
   // Check if projection type is correct
   ASSERTL0(m_projectionType == MultiRegions::eDiscontinuous,
            "Unsupported projection type: must be DG.");

@@ -137,7 +137,7 @@ protected:
     return m_vecLocs;
   }
 
-  void InitAdvection();
+  void Init_advection();
 
   virtual void v_AppendOutput1D(
       Array<OneD, Array<OneD, NekDouble>> &solution1D) override final{};
