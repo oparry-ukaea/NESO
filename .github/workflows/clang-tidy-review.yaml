@@ -1,0 +1,49 @@
+name: clang-tidy-review
+on:
+  pull_request_target:
+    paths:
+      - "**.c"
+      - "**.cpp"
+      - "**.h"
+      - "**.hpp"
+      - ".github/workflows/clangtidy.yaml"
+  workflow_dispatch:
+    paths:
+      - "**.c"
+      - "**.cpp"
+      - "**.h"
+      - "**.hpp"
+      - ".github/workflows/clangtidy.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Run clang-tidy
+        uses: ZedThree/clang-tidy-review@v0.12.2
+        id: review
+        with:
+          apt_packages: "curl" # change me
+          build_dir: tmp_build
+          cmake_command: |
+            pip install cmake && \ 
+            cmake --version && \ 
+            git config --global --add safe.directory "$GITHUB_WORKSPACE" && \ 
+            cmake . -B tmp_build -DCMAKE_EXPORT_COMPILE_COMMANDS=On
+          config_file: ".clang-tidy"
+          # Googletest triggers a _lot_ of clang-tidy warnings, so ignore all
+          # the unit tests until they're fixed or ignored upstream
+          exclude: "test/**"
+      - name: Upload results
+        uses: ZedThree/clang-tidy-review/upload@v0.12.2
+      # If there are any comments, fail the check
+      - if: steps.review.outputs.total_comments > 0
+        run: exit 1
