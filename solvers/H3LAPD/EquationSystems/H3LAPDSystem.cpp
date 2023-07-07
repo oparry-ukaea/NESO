@@ -262,6 +262,15 @@ void H3LAPDSystem::DoOdeProjection(
 void H3LAPDSystem::ExplicitTimeInt(
     const Array<OneD, const Array<OneD, NekDouble>> &inarray,
     Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
+  for (auto &var : {"ne", "Gd", "Ge", "w"}) {
+    auto fidx = m_field_to_index.get_idx(var);
+    for (auto ii = 0; ii < inarray[fidx].size(); ii++) {
+      if (!std::isfinite(inarray[fidx][ii])) {
+        std::cout << "NaN in field " << var << ", aborting." << std::endl;
+        exit(1);
+      }
+    }
+  }
 
   // Solver for electrostatic potential.
   SolvePhi(inarray);
