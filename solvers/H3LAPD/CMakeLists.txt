@@ -1,6 +1,7 @@
 # Identify source files
-set(H3LAPD_SRC_FILES EquationSystems/H3LAPDSystem.cpp Forcing/H3LAPDSources.cpp
-                     H3LAPD.cpp)
+set(H3LAPD_SRC_FILES
+    EquationSystems/H3LAPDSystem.cpp EquationSystems/ReducedH3LAPDSystem.cpp
+    Forcing/H3LAPDSources.cpp H3LAPD.cpp)
 
 # ============================== Object library ===============================
 # Put solver specific source in an object library so that tests can use it

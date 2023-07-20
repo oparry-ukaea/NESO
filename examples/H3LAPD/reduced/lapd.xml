@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<NEKTAR>
+    <COLLECTIONS DEFAULT="MatrixFree" />
+    <!--
+        The composite indices for the domain are expected to be 0 and 4 if the
+        mesh was generated from the .geo files
+     -->
+    <EXPANSIONS>
+       <E COMPOSITE="C[0]" NUMMODES="2" TYPE="MODIFIED" FIELDS="ne,w,phi" />
+    </EXPANSIONS>
+
+    <CONDITIONS>
+        <SOLVERINFO>
+            <I PROPERTY="EQTYPE"                   VALUE="reducedLAPD"          />
+            <I PROPERTY="AdvectionType"            VALUE="WeakDG"               />
+            <I PROPERTY="Projection"               VALUE="DisContinuous"        />
+            <I PROPERTY="TimeIntegrationMethod"    VALUE="ClassicalRungeKutta4" />
+            <I PROPERTY="UpwindType"               VALUE="Upwind"               />
+        </SOLVERINFO>
+
+        <GLOBALSYSSOLNINFO>
+            <V VAR="ne,w,phi">
+                <I PROPERTY="GlobalSysSoln" VALUE="IterativeStaticCond" />
+                <I PROPERTY="IterativeSolverTolerance" VALUE="1e-6"/>
+            </V>
+        </GLOBALSYSSOLNINFO>
+
+        <PARAMETERS>
+            <P> TimeStep      = 1e-3              </P>
+            <P> NumSteps      = 1500              </P>
+            <P> TFinal        = NumSteps*TimeStep </P>
+            <P> IO_InfoSteps  = NumSteps+1        </P>
+            <P> IO_CheckSteps = 30                </P>
+            <P> Bxy    = 1 </P> <!-- Magnetic field strength -->
+            <P> nRef   = 1 </P> <!-- Reference density -->
+            <P> d22    = 0 </P>
+            <P> xrange = 5 </P>
+            <P> yrange = 5 </P>
+            <P> zrange = 10 </P>
+            <!-- Blob widths -->
+            <P> xnorm  = xrange/4 </P>
+            <P> ynorm  = yrange/4 </P>
+            <P> znorm  = zrange/4 </P>
+        </PARAMETERS>
+
+        <VARIABLES>
+            <V ID="0"> ne  </V>
+            <V ID="1"> w   </V>
+            <V ID="2"> phi </V>
+        </VARIABLES>
+
+        <BOUNDARYREGIONS>
+            <B ID="0"> C[1] </B> <!-- boundary in x,y directions -->
+            <B ID="1"> C[2] </B> <!-- low z end -->
+            <B ID="2"> C[3] </B> <!-- high z end -->
+        </BOUNDARYREGIONS>
+
+        <BOUNDARYCONDITIONS>
+            <REGION REF="0">
+                <D VAR="ne" VALUE="nRef" />
+                <D VAR="w" VALUE="0" />
+                <D VAR="phi" VALUE="0" />
+            </REGION>
+            <REGION REF="1">
+                <P VAR="ne" VALUE="[2]" />
+                <P VAR="w" VALUE="[2]" />
+                <P VAR="phi" VALUE="[2]" />
+            </REGION>
+            <REGION REF="2">
+                <P VAR="ne" VALUE="[1]" />
+                <P VAR="w" VALUE="[1]" />
+                <P VAR="phi" VALUE="[1]" />
+            </REGION>
+        </BOUNDARYCONDITIONS>
+        <FUNCTION NAME="InitialConditions">
+            <E VAR="ne"  DOMAIN="0" VALUE="nRef*(1+exp(-1*(x*x/xnorm/xnorm + y*y/ynorm/ynorm + (z-zrange/2)*(z-zrange/2)/znorm/znorm )))" />
+            <E VAR="w"   DOMAIN="0" VALUE="0" />
+            <E VAR="phi" DOMAIN="0" VALUE="0" />
+        </FUNCTION>
+
+        <!-- Parallel velocity -->
+        <FUNCTION NAME="vpar">
+            <E VAR="ne" VALUE="0.1" />
+        </FUNCTION>
+    </CONDITIONS>
+</NEKTAR>
