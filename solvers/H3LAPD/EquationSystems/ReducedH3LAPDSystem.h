@@ -78,28 +78,6 @@ protected:
   // List of field names required by the solver
   std::vector<std::string> m_required_flds;
 
-  void AddAdvTerms(std::vector<std::string> field_names,
-                   const SolverUtils::AdvectionSharedPtr advObj,
-                   const Array<OneD, Array<OneD, NekDouble>> &vAdv,
-                   const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                   Array<OneD, Array<OneD, NekDouble>> &outarray,
-                   const NekDouble time);
-
-  void AddCollisionAndPolDriftTerms(
-      const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-      Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void AddEParTerms(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                    Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void AddGradPTerms(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                     Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void AddDivvParTerm(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                      Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void CalcCollisionFreqs(const Array<OneD, NekDouble> &ne,
-                          Array<OneD, NekDouble> &coeffs);
-  void CalcCoulombLogarithm(const Array<OneD, NekDouble> &ne,
-                            Array<OneD, NekDouble> &LogLambda);
-  void
-  CalcEAndAdvVels(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
   void CalcAdvNormalVels();
   void DoOdeProjection(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
@@ -108,28 +86,14 @@ protected:
   void ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
                        const NekDouble time);
-  void GetFluxVectorDiff(
-      const Array<OneD, Array<OneD, NekDouble>> &inarray,
-      const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &qfield,
-      Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &viscousTensor);
 
   void
   GetFluxVectorElec(const Array<OneD, Array<OneD, NekDouble>> &physfield,
                     Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
-  void
-  GetFluxVectorVort(const Array<OneD, Array<OneD, NekDouble>> &physfield,
-                    Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
-
-  Array<OneD, NekDouble> &
-  GetVnAdv(Array<OneD, NekDouble> &traceVn,
-           const Array<OneD, Array<OneD, NekDouble>> &vAdv);
 
   Array<OneD, NekDouble> &GetVnAdvElec();
-  Array<OneD, NekDouble> &GetVnAdvVort();
 
   void LoadParams();
-
-  void SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
 
   void ValidateFieldList();
 

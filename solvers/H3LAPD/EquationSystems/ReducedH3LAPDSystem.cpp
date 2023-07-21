@@ -53,87 +53,6 @@ ReducedH3LAPDSystem::ReducedH3LAPDSystem(
   m_required_flds = {"ne", "w", "phi"};
 }
 
-void ReducedH3LAPDSystem::AddAdvTerms(
-    std::vector<std::string> field_names,
-    const SolverUtils::AdvectionSharedPtr advObj,
-    const Array<OneD, Array<OneD, NekDouble>> &vAdv,
-    const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-    Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
-
-  int nfields = field_names.size();
-  int npts = inarray[0].size();
-
-  // Make temporary copies of target fields, inarray vals and initialise a
-  // temporary output array
-  Array<OneD, MultiRegions::ExpListSharedPtr> tmp_fields(nfields);
-  Array<OneD, Array<OneD, NekDouble>> tmp_inarray(nfields);
-  Array<OneD, Array<OneD, NekDouble>> tmp_outarray(nfields);
-  for (auto ii = 0; ii < nfields; ii++) {
-    int idx = m_field_to_index.get_idx(field_names[ii]);
-    tmp_fields[ii] = m_fields[idx];
-    tmp_inarray[ii] = Array<OneD, NekDouble>(npts);
-    Vmath::Vcopy(npts, inarray[idx], 1, tmp_inarray[ii], 1);
-    tmp_outarray[ii] = Array<OneD, NekDouble>(outarray[idx].size());
-  }
-  // Compute advection terms; result is returned in temporary output array
-  advObj->Advect(tmp_fields.size(), tmp_fields, vAdv, tmp_inarray, tmp_outarray,
-                 time);
-
-  // Subtract temporary output array from the appropriate indices of outarray
-  for (auto ii = 0; ii < nfields; ii++) {
-    int idx = m_field_to_index.get_idx(field_names[ii]);
-    Vmath::Vsub(outarray[idx].size(), outarray[idx], 1, tmp_outarray[ii], 1,
-                outarray[idx], 1);
-  }
-}
-
-void ReducedH3LAPDSystem::AddDivvParTerm(
-    const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-    Array<OneD, Array<OneD, NekDouble>> &outarray) {
-  int ne_idx = m_field_to_index.get_idx("ne");
-  int w_idx = m_field_to_index.get_idx("w");
-  int nPts = GetNpoints();
-  Array<OneD, NekDouble> div_nvpar_term(nPts);
-  Vmath::Vmul(nPts, inarray[ne_idx], 1, m_vPerpElec, 1, div_nvpar_term, 1);
-  m_fields[ne_idx]->PhysDeriv(2, div_nvpar_term, div_nvpar_term);
-  Vmath::Vsub(nPts, outarray[w_idx], 1, div_nvpar_term, 1, outarray[w_idx], 1);
-}
-
-/**
- * @brief Compute E = \f$ -\nabla\phi\f$, \f$ v_{E\times B}\f$ and the advection
- * velocities used in the ne/Ge, Gd equations.
- * @param inarray array of field physvals
- */
-void ReducedH3LAPDSystem::CalcEAndAdvVels(
-    const Array<OneD, const Array<OneD, NekDouble>> &inarray) {
-  int phi_idx = m_field_to_index.get_idx("phi");
-  int nPts = GetNpoints();
-  m_fields[phi_idx]->PhysDeriv(m_fields[phi_idx]->GetPhys(), m_E[0], m_E[1],
-                               m_E[2]);
-  Vmath::Neg(nPts, m_E[0], 1);
-  Vmath::Neg(nPts, m_E[1], 1);
-  Vmath::Neg(nPts, m_E[2], 1);
-
-  // v_ExB = Evec x Bvec / B^2
-  Vmath::Svtsvtp(nPts, m_B[2] / m_Bmag / m_Bmag, m_E[1], 1,
-                 -m_B[1] / m_Bmag / m_Bmag, m_E[2], 1, m_vExB[0], 1);
-  Vmath::Svtsvtp(nPts, m_B[0] / m_Bmag / m_Bmag, m_E[2], 1,
-                 -m_B[2] / m_Bmag / m_Bmag, m_E[0], 1, m_vExB[1], 1);
-  Vmath::Svtsvtp(nPts, m_B[1] / m_Bmag / m_Bmag, m_E[0], 1,
-                 -m_B[0] / m_Bmag / m_Bmag, m_E[1], 1, m_vExB[2], 1);
-
-  // vpar
-  int ne_idx = m_field_to_index.get_idx("ne");
-  Array<OneD, NekDouble> tmpx(nPts), tmpy(nPts), tmpz(nPts);
-  m_fields[ne_idx]->GetCoords(tmpx, tmpy, tmpz);
-  m_session->GetFunction("vpar", ne_idx)
-      ->Evaluate(tmpx, tmpy, tmpz, m_vPerpElec);
-  for (auto iDim = 0; iDim < m_graph->GetSpaceDimension(); iDim++) {
-    Vmath::Svtvp(nPts, m_b_unit[iDim], m_vPerpElec, 1, m_vExB[iDim], 1,
-                 m_vAdvElec[iDim], 1);
-  }
-}
-
 /**
  * @brief Perform projection into correct polynomial space.
  *
@@ -148,7 +67,7 @@ void ReducedH3LAPDSystem::DoOdeProjection(
     Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
   int nvariables = inarray.size();
   int npoints = inarray[0].size();
-  // SetBoundaryConditions(time);
+  SetBoundaryConditions(time);
 
   for (int i = 0; i < nvariables; ++i) {
     Vmath::Vcopy(npoints, inarray[i], 1, outarray[i], 1);
@@ -158,44 +77,21 @@ void ReducedH3LAPDSystem::DoOdeProjection(
 void ReducedH3LAPDSystem::ExplicitTimeInt(
     const Array<OneD, const Array<OneD, NekDouble>> &inarray,
     Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
+  int nPts = GetNpoints();
 
-  // Solver for electrostatic potential.
-  SolvePhi(inarray);
+  // Set advection vel
+  Vmath::Fill(nPts, 0.0, m_vAdvElec[0], 1);
+  Vmath::Fill(nPts, 0.0, m_vAdvElec[1], 1);
+  Vmath::Fill(nPts, 0.05, m_vAdvElec[2], 1);
 
-  // Calculate electric field from Phi, and compute v_ExB
-  CalcEAndAdvVels(inarray);
-
-  // Add ne advection term to outarray
-  AddAdvTerms({"ne"}, m_advElec, m_vAdvElec, inarray, outarray, time);
-}
-
-void GetFluxVectorR(const Array<OneD, Array<OneD, NekDouble>> &physfield,
-                    const Array<OneD, Array<OneD, NekDouble>> &vAdv,
-                    Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux) {
-  ASSERTL1(flux[0].size() == vAdv.size(),
-           "Dimension of flux array and advection velocity array do not match");
-  int nq = physfield[0].size();
-
-  for (auto i = 0; i < flux.size(); ++i) {
-    for (auto j = 0; j < flux[0].size(); ++j) {
-      Vmath::Vmul(nq, physfield[i], 1, vAdv[j], 1, flux[i][j], 1);
-    }
-  }
+  Array<OneD, Array<OneD, NekDouble>> tmp_out(nPts);
+  tmp_out[0] = Array<OneD, NekDouble>(nPts, 0.0);
+  m_advElec->Advect(1, m_fields, m_vAdvElec, inarray, tmp_out, time);
+  Vmath::Vsub(nPts, outarray[0], 1, tmp_out[0], 1, outarray[0], 1);
 }
 
 /**
- * @brief Return the flux vector for the diffusion problem.
- */
-void ReducedH3LAPDSystem::GetFluxVectorDiff(
-    const Array<OneD, Array<OneD, NekDouble>> &inarray,
-    const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &qfield,
-    Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &viscousTensor) {
-  std::cout << "*** GetFluxVectorDiff not defined! ***" << std::endl;
-}
-
-/**
- * @brief Compute the flux vector for advection in the electron density and
- * momentum equations.
+ * @brief Compute the flux vector for advecting the electron density
  *
  * @param physfield   Array of Fields ptrs
  * @param flux        Resulting flux array
@@ -203,58 +99,38 @@ void ReducedH3LAPDSystem::GetFluxVectorDiff(
 void ReducedH3LAPDSystem::GetFluxVectorElec(
     const Array<OneD, Array<OneD, NekDouble>> &physfield,
     Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux) {
-  GetFluxVectorR(physfield, m_vAdvElec, flux);
-}
 
-/**
- * @brief Compute the flux vector for advection in the vorticity equation.
- *
- * @param physfield   Array of Fields ptrs
- * @param flux        Resulting flux array
- */
-void ReducedH3LAPDSystem::GetFluxVectorVort(
-    const Array<OneD, Array<OneD, NekDouble>> &physfield,
-    Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux) {
-  // Advection velocity is v_ExB in the vorticity equation
-  GetFluxVectorR(physfield, m_vExB, flux);
-}
+  ASSERTL1(flux[0].size() == vAdv.size(),
+           "Dimension of flux array and advection velocity array do not match");
+  int nq = physfield[0].size();
 
-/**
- * @brief Compute normal advection velocity given a trace array and an advection
- * velocity array
- */
-Array<OneD, NekDouble> &
-ReducedH3LAPDSystem::GetVnAdv(Array<OneD, NekDouble> &traceVn,
-                              const Array<OneD, Array<OneD, NekDouble>> &vAdv) {
-  // Number of trace (interface) points
-  int nTracePts = GetTraceNpoints();
-  // Auxiliary variable to compute normal velocities
-  Array<OneD, NekDouble> tmp(nTracePts);
-
-  // Zero previous values
-  Vmath::Zero(nTracePts, traceVn, 1);
-
-  //  Compute dot product of advection velocity with the trace normals and store
-  for (int i = 0; i < vAdv.size(); ++i) {
-    m_fields[0]->ExtractTracePhys(vAdv[i], tmp);
-    Vmath::Vvtvp(nTracePts, m_traceNormals[i], 1, tmp, 1, traceVn, 1, traceVn,
-                 1);
+  for (auto ifld = 0; ifld < flux.size(); ++ifld) {
+    for (auto idim = 0; idim < flux[0].size(); ++idim) {
+      Vmath::Vmul(nq, physfield[ifld], 1, m_vAdvElec[idim], 1, flux[ifld][idim],
+                  1);
+    }
   }
-  return traceVn;
 }
 
 /**
  * @brief Compute the normal advection velocity for the electron density
  */
 Array<OneD, NekDouble> &ReducedH3LAPDSystem::GetVnAdvElec() {
-  return GetVnAdv(m_traceVnElec, m_vAdvElec);
-}
+  // Number of trace (interface) points
+  int nTracePts = GetTraceNpoints();
+  // Auxiliary variable to compute normal velocities
+  Array<OneD, NekDouble> tmp(nTracePts);
 
-/**
- * @brief Compute the normal advection velocity for the vorticity equation
- */
-Array<OneD, NekDouble> &ReducedH3LAPDSystem::GetVnAdvVort() {
-  return GetVnAdv(m_traceVnVort, m_vExB);
+  // Zero previous values
+  Vmath::Zero(nTracePts, m_traceVnElec, 1);
+
+  //  Compute dot product of advection velocity with the trace normals and store
+  for (int i = 0; i < m_vAdvElec.size(); ++i) {
+    m_fields[0]->ExtractTracePhys(m_vAdvElec[i], tmp);
+    Vmath::Vvtvp(nTracePts, m_traceNormals[i], 1, tmp, 1, m_traceVnElec, 1,
+                 m_traceVnElec, 1);
+  }
+  return m_traceVnElec;
 }
 
 void ReducedH3LAPDSystem::LoadParams() {
@@ -317,40 +193,6 @@ void ReducedH3LAPDSystem::PrintArrVals(const Array<OneD, NekDouble> &arr,
   }
 }
 
-void ReducedH3LAPDSystem::SolvePhi(
-    const Array<OneD, const Array<OneD, NekDouble>> &inarray) {
-  int nPts = GetNpoints();
-
-  // Field indices
-  int ne_idx = m_field_to_index.get_idx("ne");
-  int phi_idx = m_field_to_index.get_idx("phi");
-  int w_idx = m_field_to_index.get_idx("w");
-
-  // Set up variable coefficients
-  // ***Assumes field aligned with z-axis***
-  StdRegions::VarCoeffMap varcoeffs;
-  varcoeffs[StdRegions::eVarCoeffD00] = Array<OneD, NekDouble>(nPts, 1.0);
-  varcoeffs[StdRegions::eVarCoeffD01] = Array<OneD, NekDouble>(nPts, 0.0);
-  varcoeffs[StdRegions::eVarCoeffD02] = Array<OneD, NekDouble>(nPts, 0.0);
-  varcoeffs[StdRegions::eVarCoeffD11] = Array<OneD, NekDouble>(nPts, 1.0);
-  varcoeffs[StdRegions::eVarCoeffD12] = Array<OneD, NekDouble>(nPts, 0.0);
-  varcoeffs[StdRegions::eVarCoeffD22] = Array<OneD, NekDouble>(nPts, m_d22);
-
-  // Set up factors for electrostatic potential solve. We support a generic
-  // Helmholtz solve of the form (\nabla^2 - \lambda) u = f, so this sets
-  // \lambda to zero.
-  StdRegions::ConstFactorMap factors;
-  factors[StdRegions::eFactorLambda] = 0.0;
-
-  // Solve for phi. Output of this routine is in coefficient (spectral)
-  // space, so backwards transform to physical space since we'll need that
-  // for the advection step & computing drift velocity.
-  m_fields[phi_idx]->HelmSolve(
-      inarray[w_idx], m_fields[phi_idx]->UpdateCoeffs(), factors, varcoeffs);
-  m_fields[phi_idx]->BwdTrans(m_fields[phi_idx]->GetCoeffs(),
-                              m_fields[phi_idx]->UpdatePhys());
-}
-
 /**
  * Check all required fields are defined
  */
@@ -406,8 +248,6 @@ void ReducedH3LAPDSystem::v_InitObject(bool DeclareField) {
     m_vExB[i] = Array<OneD, NekDouble>(nPts);
     m_E[i] = Array<OneD, NekDouble>(nPts);
   }
-  // Create storage for perpendicular velocities
-  m_vPerpElec = Array<OneD, NekDouble>(nPts);
 
   // Type of advection class to be used. By default, we only support the
   // discontinuous projection, since this is the only approach we're
@@ -423,7 +263,6 @@ void ReducedH3LAPDSystem::v_InitObject(bool DeclareField) {
   if (m_fields[0]->GetTrace()) {
     auto nTrace = GetTraceNpoints();
     m_traceVnElec = Array<OneD, NekDouble>(nTrace);
-    m_traceVnVort = Array<OneD, NekDouble>(nTrace);
   }
 
   // Advection objects
