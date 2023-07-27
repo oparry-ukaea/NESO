@@ -28,7 +28,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-// Description: Header for the Hermes-3 LAPD equation system
+// Description: Header for a reduced version of the Hermes-3 LAPD equation
+// system
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -43,9 +44,11 @@
 #include <SolverUtils/Forcing/Forcing.h>
 #include <SolverUtils/RiemannSolvers/RiemannSolver.h>
 
+#include "H3LAPDSystem.h"
+
 namespace Nektar {
 
-class ReducedH3LAPDSystem : virtual public SolverUtils::AdvectionSystem {
+class ReducedH3LAPDSystem : virtual public H3LAPDSystem {
 public:
   friend class MemoryManager<ReducedH3LAPDSystem>;
 
@@ -62,135 +65,24 @@ public:
     return p;
   }
 
-  /// Default destructor.
-  virtual ~ReducedH3LAPDSystem() = default;
-
 protected:
-  /// Protected constructor. Since we use a factory pattern, objects should be
-  /// constructed via the SolverUtils::EquationSystem factory.
   ReducedH3LAPDSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
                       const SpatialDomains::MeshGraphSharedPtr &pGraph);
 
-  // Field name => index mapper
-  NESO::NektarFieldIndexMap m_field_to_index;
-  // Forcing/source terms
-  std::vector<SolverUtils::ForcingSharedPtr> m_forcing;
-  // List of field names required by the solver
-  std::vector<std::string> m_required_flds;
-
-  void AddAdvTerms(std::vector<std::string> field_names,
-                   const SolverUtils::AdvectionSharedPtr advObj,
-                   const Array<OneD, Array<OneD, NekDouble>> &vAdv,
-                   const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                   Array<OneD, Array<OneD, NekDouble>> &outarray,
-                   const NekDouble time);
-
-  void AddCollisionAndPolDriftTerms(
-      const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-      Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void AddEParTerms(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                    Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void AddGradPTerms(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                     Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void AddDivvParTerm(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                      Array<OneD, Array<OneD, NekDouble>> &outarray);
-  void CalcCollisionFreqs(const Array<OneD, NekDouble> &ne,
-                          Array<OneD, NekDouble> &coeffs);
-  void CalcCoulombLogarithm(const Array<OneD, NekDouble> &ne,
-                            Array<OneD, NekDouble> &LogLambda);
-  void
-  CalcEAndAdvVels(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
-  void CalcAdvNormalVels();
-  void DoOdeProjection(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                       Array<OneD, Array<OneD, NekDouble>> &outarray,
-                       const NekDouble time);
+  void CalcEAndAdvVels(
+      const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
 
   void ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
-                       const NekDouble time);
-  void GetFluxVectorDiff(
-      const Array<OneD, Array<OneD, NekDouble>> &inarray,
-      const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &qfield,
-      Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &viscousTensor);
+                       const NekDouble time) override;
+
+  void LoadParams() override;
 
   void
-  GetFluxVectorElec(const Array<OneD, Array<OneD, NekDouble>> &physfield,
-                    Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
-  void
-  GetFluxVectorVort(const Array<OneD, Array<OneD, NekDouble>> &physfield,
-                    Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
-
-  Array<OneD, NekDouble> &
-  GetVnAdv(Array<OneD, NekDouble> &traceVn,
-           const Array<OneD, Array<OneD, NekDouble>> &vAdv);
-
-  Array<OneD, NekDouble> &GetVnAdvElec();
-  Array<OneD, NekDouble> &GetVnAdvVort();
-
-  void LoadParams();
-
-  void SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
-
-  void ValidateFieldList();
-
-  virtual void v_InitObject(bool DeclareField) override;
+  SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
 
 private:
   NekDouble m_d22;
-  // Advection type
-  std::string m_advType;
-  // Magnetic field vector
-  std::vector<NekDouble> m_B;
-  // Magnitude of the magnetic field
-  NekDouble m_Bmag;
-  // Normalised magnetic field vector
-  std::vector<NekDouble> m_b_unit;
-  // Charge unit
-  NekDouble m_charge_e;
-  // Ion mass;
-  NekDouble m_md;
-  // Electron mass;
-  NekDouble m_me;
-  // Reference number density
-  NekDouble m_nRef;
-  // Riemann solver type (used for all advection terms)
-  std::string m_RiemSolvType;
-  // Ion temperature in eV
-  NekDouble m_Td;
-  // Electron temperature in eV
-  NekDouble m_Te;
-  //---------------------------------------------------------------------------
-  // Factors used in collision coeff calculation
-  // Density-independent part of the Coulomb logarithm; read from config
-  NekDouble m_coulomb_log_const;
-  // Pre-factor used when calculating collision frequencies; read from config
-  NekDouble m_nu_ei_const;
-  // Factor to convert densities (back) to SI; used in Coulomb logarithm calc
-  NekDouble m_n_to_SI;
-  //---------------------------------------------------------------------------
-  // Advection objects
-  SolverUtils::AdvectionSharedPtr m_advElec;
-  SolverUtils::AdvectionSharedPtr m_advVort;
-  // Storage for Electric field
-  Array<OneD, Array<OneD, NekDouble>> m_E;
-  // Riemann solver objects
-  SolverUtils::RiemannSolverSharedPtr m_riemannSolverElec;
-  SolverUtils::RiemannSolverSharedPtr m_riemannSolverVort;
-  // Storage for advection velocities dotted with element_edge_normals
-  Array<OneD, NekDouble> m_traceVnElec;
-  Array<OneD, NekDouble> m_traceVnVort;
-  // Storage for electron advection velocity
-  Array<OneD, Array<OneD, NekDouble>> m_vAdvElec;
-  // Storage for ExB drift velocity
-  Array<OneD, Array<OneD, NekDouble>> m_vExB;
-  // Storage for electron perpendicular velocity
-  Array<OneD, NekDouble> m_vPerpElec;
-  //---------------------------------------------------------------------------
-  // Debugging
-  void PrintArrVals(const Array<OneD, NekDouble> &arr, int num, int stride = 1,
-                    std::string label = "", bool all_tasks = false);
-  void PrintArrSize(Array<OneD, NekDouble> &arr, std::string label = "",
-                    bool all_tasks = false);
 };
 
 } // namespace Nektar

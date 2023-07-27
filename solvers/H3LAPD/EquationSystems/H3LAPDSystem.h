@@ -89,23 +89,24 @@ protected:
       const Array<OneD, const Array<OneD, NekDouble>> &inarray,
       Array<OneD, Array<OneD, NekDouble>> &outarray);
   void AddEParTerms(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                     Array<OneD, Array<OneD, NekDouble>> &outarray);
+                    Array<OneD, Array<OneD, NekDouble>> &outarray);
   void AddGradPTerms(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                      Array<OneD, Array<OneD, NekDouble>> &outarray);
   void CalcCollisionFreqs(const Array<OneD, NekDouble> &ne,
                           Array<OneD, NekDouble> &coeffs);
   void CalcCoulombLogarithm(const Array<OneD, NekDouble> &ne,
                             Array<OneD, NekDouble> &LogLambda);
-  void
-  CalcEAndAdvVels(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
+  void virtual CalcEAndAdvVels(
+      const Array<OneD, const Array<OneD, NekDouble>> &inarray);
   void CalcAdvNormalVels();
   void DoOdeProjection(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
                        const NekDouble time);
 
-  void ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                       Array<OneD, Array<OneD, NekDouble>> &outarray,
-                       const NekDouble time);
+  virtual void
+  ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+                  Array<OneD, Array<OneD, NekDouble>> &outarray,
+                  const NekDouble time);
   void GetFluxVectorDiff(
       const Array<OneD, Array<OneD, NekDouble>> &inarray,
       const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &qfield,
@@ -129,15 +130,15 @@ protected:
   Array<OneD, NekDouble> &GetVnAdvIons();
   Array<OneD, NekDouble> &GetVnAdvVort();
 
-  void LoadParams();
+  virtual void LoadParams();
 
-  void SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
+  virtual void
+  SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
 
   void ValidateFieldList();
 
   virtual void v_InitObject(bool DeclareField) override;
 
-private:
   // Advection type
   std::string m_advType;
   // Magnetic field vector
