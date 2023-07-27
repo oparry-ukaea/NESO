@@ -77,5 +77,10 @@
             <E VAR="w"   DOMAIN="0" VALUE="0" />
             <E VAR="phi" DOMAIN="0" VALUE="0" />
         </FUNCTION>
+
+        <!-- Parallel velocity -->
+        <FUNCTION NAME="vpar">
+            <E VAR="ne" VALUE="0.1" />
+        </FUNCTION>
     </CONDITIONS>
 </NEKTAR>
