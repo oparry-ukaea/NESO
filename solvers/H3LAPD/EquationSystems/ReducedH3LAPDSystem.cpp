@@ -51,6 +51,18 @@ ReducedH3LAPDSystem::ReducedH3LAPDSystem(
   m_required_flds = {"ne", "w", "phi"};
 }
 
+void ReducedH3LAPDSystem::AddDivvParTerm(
+    const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+    Array<OneD, Array<OneD, NekDouble>> &outarray) {
+  int ne_idx = m_field_to_index.get_idx("ne");
+  int w_idx = m_field_to_index.get_idx("w");
+  int nPts = GetNpoints();
+  Array<OneD, NekDouble> div_nvpar_term(nPts);
+  Vmath::Vmul(nPts, inarray[ne_idx], 1, m_vParElec, 1, div_nvpar_term, 1);
+  m_fields[ne_idx]->PhysDeriv(2, div_nvpar_term, div_nvpar_term);
+  Vmath::Vsub(nPts, outarray[w_idx], 1, div_nvpar_term, 1, outarray[w_idx], 1);
+}
+
 /**
  * @brief Compute E = \f$ -\nabla\phi\f$, \f$ v_{E\times B}\f$ and the advection
  * velocities used in the ne/Ge, Gd equations.
@@ -103,6 +115,10 @@ void ReducedH3LAPDSystem::ExplicitTimeInt(
 
   // Add ne advection term to outarray
   AddAdvTerms({"ne"}, m_advElec, m_vAdvElec, inarray, outarray, time);
+  // Add w advection term to outarray
+  AddAdvTerms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
+
+  AddDivvParTerm(inarray, outarray);
 }
 
 void ReducedH3LAPDSystem::LoadParams() {

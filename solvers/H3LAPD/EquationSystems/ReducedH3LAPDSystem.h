@@ -69,6 +69,9 @@ protected:
   ReducedH3LAPDSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
                       const SpatialDomains::MeshGraphSharedPtr &pGraph);
 
+  void AddDivvParTerm(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+                      Array<OneD, Array<OneD, NekDouble>> &outarray);
+
   void CalcEAndAdvVels(
       const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
 
