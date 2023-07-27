@@ -153,6 +153,8 @@ protected:
   NekDouble m_md;
   // Electron mass;
   NekDouble m_me;
+  // Factor used to set the density floor (n_floor = m_n_floor_fac * m_nRef)
+  NekDouble m_n_floor_fac;
   // Reference number density
   NekDouble m_nRef;
   // Riemann solver type (used for all advection terms)
@@ -189,9 +191,9 @@ protected:
   Array<OneD, Array<OneD, NekDouble>> m_vAdvIons;
   // Storage for ExB drift velocity
   Array<OneD, Array<OneD, NekDouble>> m_vExB;
-  // Storage for electron, ion perpendicular velocities
-  Array<OneD, NekDouble> m_vPerpIons;
-  Array<OneD, NekDouble> m_vPerpElec;
+  // Storage for electron, ion parallel velocities
+  Array<OneD, NekDouble> m_vParIons;
+  Array<OneD, NekDouble> m_vParElec;
   //---------------------------------------------------------------------------
   // Debugging
   void PrintArrVals(const Array<OneD, NekDouble> &arr, int num, int stride = 1,

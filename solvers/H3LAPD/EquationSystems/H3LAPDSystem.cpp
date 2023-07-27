@@ -103,7 +103,7 @@ void H3LAPDSystem::AddCollisionAndPolDriftTerms(
   // to Ge rhs, but subtract it from Gd rhs
   Array<OneD, NekDouble> collisionFreqs(npts), collisionTerm(npts), vDiff(npts),
       vDiffne(npts);
-  Vmath::Vsub(npts, m_vPerpIons, 1, m_vPerpElec, 1, vDiff, 1);
+  Vmath::Vsub(npts, m_vParIons, 1, m_vParElec, 1, vDiff, 1);
   Vmath::Vmul(npts, inarray[ne_idx], 1, vDiff, 1, vDiffne, 1);
   CalcCollisionFreqs(inarray[ne_idx], collisionFreqs);
   for (auto ii = 0; ii < npts; ii++) {
@@ -117,7 +117,7 @@ void H3LAPDSystem::AddCollisionAndPolDriftTerms(
   Vmath::Vsub(npts, outarray[Gd_idx], 1, collisionTerm, 1, outarray[Gd_idx], 1);
 
   // Using nd==ne; Compute the polarisation drift term for the w rhs:
-  // \nabla\cdot[ne*(m_vPerpIons-m_vPerpElec)]
+  // \nabla\cdot[ne*(m_vParIons-m_vParElec)]
   Array<OneD, NekDouble> polDrift(npts);
   // ***Assumes field aligned with z-axis***
   m_fields[ne_idx]->PhysDeriv(2, vDiffne, polDrift);
@@ -218,22 +218,28 @@ void H3LAPDSystem::CalcEAndAdvVels(
   Vmath::Svtsvtp(nPts, m_B[1] / m_Bmag / m_Bmag, m_E[0], 1,
                  -m_B[0] / m_Bmag / m_Bmag, m_E[1], 1, m_vExB[2], 1);
 
-  // vperp,d = Gd / ne / md (ne === nd)
+  // v_par,d = Gd / max(ne,n_floor) / md   (N.B. ne === nd)
   int Gd_idx = m_field_to_index.get_idx("Gd");
   int ne_idx = m_field_to_index.get_idx("ne");
-  Vmath::Vdiv(nPts, inarray[Gd_idx], 1, inarray[ne_idx], 1, m_vPerpIons, 1);
-  Vmath::Smul(nPts, 1.0 / m_md, m_vPerpIons, 1, m_vPerpIons, 1);
+  for (auto ii = 0; ii < nPts; ii++) {
+    m_vParIons[ii] = inarray[Gd_idx][ii] /
+                     std::max(inarray[ne_idx][ii], m_nRef * m_n_floor_fac);
+  }
+  Vmath::Smul(nPts, 1.0 / m_md, m_vParIons, 1, m_vParIons, 1);
 
-  // vperp,e = Ge / ne / me
+  // v_par,e = Ge / max(ne,n_floor) / me
   int Ge_idx = m_field_to_index.get_idx("Ge");
-  Vmath::Vdiv(nPts, inarray[Ge_idx], 1, inarray[ne_idx], 1, m_vPerpElec, 1);
-  Vmath::Smul(nPts, 1.0 / m_me, m_vPerpElec, 1, m_vPerpElec, 1);
+  for (auto ii = 0; ii < nPts; ii++) {
+    m_vParElec[ii] = inarray[Ge_idx][ii] /
+                     std::max(inarray[ne_idx][ii], m_nRef * m_n_floor_fac);
+  }
+  Vmath::Smul(nPts, 1.0 / m_me, m_vParElec, 1, m_vParElec, 1);
 
-  // vAdv[iDim] = b[iDim]*v_perp + v_ExB[iDim] for each species
+  // vAdv[iDim] = b[iDim]*v_par + v_ExB[iDim] for each species
   for (auto iDim = 0; iDim < m_graph->GetSpaceDimension(); iDim++) {
-    Vmath::Svtvp(nPts, m_b_unit[iDim], m_vPerpElec, 1, m_vExB[iDim], 1,
+    Vmath::Svtvp(nPts, m_b_unit[iDim], m_vParElec, 1, m_vExB[iDim], 1,
                  m_vAdvElec[iDim], 1);
-    Vmath::Svtvp(nPts, m_b_unit[iDim], m_vPerpIons, 1, m_vExB[iDim], 1,
+    Vmath::Svtvp(nPts, m_b_unit[iDim], m_vParIons, 1, m_vExB[iDim], 1,
                  m_vAdvIons[iDim], 1);
   }
 }
@@ -270,6 +276,11 @@ void H3LAPDSystem::ExplicitTimeInt(
         exit(1);
       }
     }
+  }
+
+  // Zero outarray
+  for (auto ifld = 0; ifld < outarray.size(); ifld++) {
+    Vmath::Zero(outarray[ifld].size(), outarray[ifld], 1);
   }
 
   // Solver for electrostatic potential.
@@ -423,6 +434,9 @@ void H3LAPDSystem::LoadParams() {
   // Density independent part of the coulomb logarithm
   m_session->LoadParameter("logLambda_const", m_coulomb_log_const);
 
+  // Factor to set density floor; default to 1e-5 (Hermes-3 default)
+  m_session->LoadParameter("n_floor_fac", m_n_floor_fac, 1e-5);
+
   // Pre-factor used when calculating collision frequencies; read from config
   m_session->LoadParameter("nu_ei_const", m_nu_ei_const);
 
@@ -568,9 +582,9 @@ void H3LAPDSystem::v_InitObject(bool DeclareField) {
     m_vExB[i] = Array<OneD, NekDouble>(nPts);
     m_E[i] = Array<OneD, NekDouble>(nPts);
   }
-  // Create storage for perpendicular velocities
-  m_vPerpIons = Array<OneD, NekDouble>(nPts);
-  m_vPerpElec = Array<OneD, NekDouble>(nPts);
+  // Create storage for parallel velocities
+  m_vParIons = Array<OneD, NekDouble>(nPts);
+  m_vParElec = Array<OneD, NekDouble>(nPts);
 
   // Type of advection class to be used. By default, we only support the
   // discontinuous projection, since this is the only approach we're

@@ -79,9 +79,9 @@ void ReducedH3LAPDSystem::CalcEAndAdvVels(
   Array<OneD, NekDouble> tmpx(nPts), tmpy(nPts), tmpz(nPts);
   m_fields[ne_idx]->GetCoords(tmpx, tmpy, tmpz);
   m_session->GetFunction("vpar", ne_idx)
-      ->Evaluate(tmpx, tmpy, tmpz, m_vPerpElec);
+      ->Evaluate(tmpx, tmpy, tmpz, m_vParElec);
   for (auto iDim = 0; iDim < m_graph->GetSpaceDimension(); iDim++) {
-    Vmath::Svtvp(nPts, m_b_unit[iDim], m_vPerpElec, 1, m_vExB[iDim], 1,
+    Vmath::Svtvp(nPts, m_b_unit[iDim], m_vParElec, 1, m_vExB[iDim], 1,
                  m_vAdvElec[iDim], 1);
   }
 }
