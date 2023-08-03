@@ -86,6 +86,7 @@ protected:
   SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
 
 private:
+  bool m_use_varcoeffs;
   NekDouble m_d22;
   NekDouble m_HW_coeff;
 };

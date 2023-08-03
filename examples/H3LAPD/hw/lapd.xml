@@ -75,6 +75,8 @@
             <P> sumvsq          = 1.0  </P> <!-- Intermediate term to make nu_ei_const expression (slightly) clearer -->
             <P> nu_ei_const     = 1.0  </P> <!-- See eqn. 133 in equations doc (v1.30)-->
             <P> logLambda_const = 1.0  </P> <!-- See line 2 of eqn. 134 in equations doc (v1.30) -->
+            <P> d22             = 0.0  </P> <!-- d22 Coeff for Helmholtz solve -->
+            <P> use_varcoeffs   = -1  </P> <!-- >0 to use varcoeffs -->
         </PARAMETERS>
 
         <VARIABLES>

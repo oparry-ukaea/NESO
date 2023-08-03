@@ -141,11 +141,18 @@ void HWSystem::LoadParams() {
 
   // Hasegawa-Waketani coefficient (= omega/nu)
   m_session->LoadParameter("HW_coeff", m_HW_coeff, 1e4);
+
+  // Helmholtz solve coefficient
+  m_session->LoadParameter("d22", m_d22, 0);
+
+  double tmp;
+  m_session->LoadParameter("use_varcoeffs", tmp, 1);
+  m_use_varcoeffs = (tmp > 0);
 }
 
 /**
- * Override SolvePhi in order to disable variable coefficients for Phi solve and
- * set rhs = -w
+ * Override SolvePhi in order to set rhs = -w, experiment with variable
+ * coefficients and different values of d22
  */
 void HWSystem::SolvePhi(
     const Array<OneD, const Array<OneD, NekDouble>> &inarray) {
@@ -162,9 +169,23 @@ void HWSystem::SolvePhi(
   StdRegions::ConstFactorMap factors;
   factors[StdRegions::eFactorLambda] = 0.0;
 
+  StdRegions::VarCoeffMap varcoeffs;
+  varcoeffs[StdRegions::eVarCoeffD00] = Array<OneD, NekDouble>(nPts, 1.0);
+  varcoeffs[StdRegions::eVarCoeffD01] = Array<OneD, NekDouble>(nPts, 0.0);
+  varcoeffs[StdRegions::eVarCoeffD02] = Array<OneD, NekDouble>(nPts, 0.0);
+  varcoeffs[StdRegions::eVarCoeffD11] = Array<OneD, NekDouble>(nPts, 1.0);
+  varcoeffs[StdRegions::eVarCoeffD12] = Array<OneD, NekDouble>(nPts, 0.0);
+  varcoeffs[StdRegions::eVarCoeffD22] = Array<OneD, NekDouble>(nPts, m_d22);
+
   // Solve, then backwards transform the output coefficients to update physical
   // values of Phi
-  m_fields[phi_idx]->HelmSolve(rhs, m_fields[phi_idx]->UpdateCoeffs(), factors);
+  if (m_use_varcoeffs) {
+    m_fields[phi_idx]->HelmSolve(rhs, m_fields[phi_idx]->UpdateCoeffs(),
+                                 factors, varcoeffs);
+  } else {
+    m_fields[phi_idx]->HelmSolve(rhs, m_fields[phi_idx]->UpdateCoeffs(),
+                                 factors);
+  }
   m_fields[phi_idx]->BwdTrans(m_fields[phi_idx]->GetCoeffs(),
                               m_fields[phi_idx]->UpdatePhys());
 }
