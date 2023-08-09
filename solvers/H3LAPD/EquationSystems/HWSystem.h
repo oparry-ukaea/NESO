@@ -80,14 +80,12 @@ protected:
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
                        const NekDouble time) override;
 
+  void GetPhiSolveRHS(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+                      Array<OneD, NekDouble> &rhs) override;
+
   void LoadParams() override;
 
-  void
-  SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
-
 private:
-  bool m_use_varcoeffs;
-  NekDouble m_d22;
   NekDouble m_HW_coeff;
 };
 

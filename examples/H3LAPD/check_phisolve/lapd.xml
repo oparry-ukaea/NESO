@@ -76,6 +76,8 @@
             <P> nu_ei_const     = qelec^2*qd^2*(1+me/md)/(3*(PI*sumvsq)^1.5*eps0^2*me^2) </P> <!-- See eqn. 133 in equations doc (v1.30)-->
             <P> logLambda_const = 30-log(qd/e)+1.5*log(Te_eV)                            </P> <!-- See line 2 of eqn. 134 in equations doc (v1.30) -->
             <P> p2o5 = PI*2/5 </P>
+            <!-- Do 3D solve for the potential - setting d22=0 isn't working... -->
+            <P> d22 = 1 </P> 
         </PARAMETERS>
 
         <VARIABLES>
@@ -100,7 +102,7 @@
                 <!-- No slip conditions, parallel velocities/momenta go to zero -->
                 <D VAR="Ge" VALUE="0" />
                 <D VAR="Gd" VALUE="0" />
-                <D VAR="w" VALUE="-2*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
+                <D VAR="w" VALUE="-2.25*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
                 <D VAR="phi" VALUE="cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
                 <D VAR="phi_sln" VALUE="-1" />
                 <D VAR="phi_diff" VALUE="0" />
@@ -110,7 +112,7 @@
                 <D VAR="ne" VALUE="nRef" />
                 <D VAR="Ge" VALUE="-vRef*nRef*me" />
                 <D VAR="Gd" VALUE="-vRef*nRef*md" />
-                <D VAR="w" VALUE="-2*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
+                <D VAR="w" VALUE="-2.25*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
                 <P VAR="phi" VALUE="[2]" />
                 <D VAR="phi_sln" VALUE="-1" />
                 <D VAR="phi_diff" VALUE="0" />
@@ -120,7 +122,7 @@
                 <D VAR="ne" VALUE="nRef" />
                 <D VAR="Ge" VALUE="vRef*nRef*me" />
                 <D VAR="Gd" VALUE="vRef*nRef*md" />
-                <D VAR="w" VALUE="-2*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
+                <D VAR="w" VALUE="-2.25*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
                 <P VAR="phi" VALUE="[1]" />
                 <D VAR="phi_sln" VALUE="-1" />
                 <D VAR="phi_diff" VALUE="0" />
@@ -134,7 +136,7 @@
             <E VAR="ne"  DOMAIN="0" VALUE="nRef*(1e-1 * exp(-(x*x + y*y)/Rmax/Rmax))" />
             <E VAR="Ge"  DOMAIN="0" VALUE="0" />
             <E VAR="Gd"  DOMAIN="0" VALUE="0" />
-            <E VAR="w"   DOMAIN="0" VALUE="-2*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)"/>
+            <E VAR="w"   DOMAIN="0" VALUE="-2.25*p2o5*p2o5*cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)"/>
             <E VAR="phi" DOMAIN="0" VALUE="1" />
             <E VAR="phi_sln" DOMAIN="0" VALUE="cos(p2o5*x)*cos(p2o5*y)*sin(p2o5/2*z)" />
             <E VAR="phi_diff" DOMAIN="0" VALUE="1" />

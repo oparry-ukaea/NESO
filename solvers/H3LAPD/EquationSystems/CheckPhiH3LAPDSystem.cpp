@@ -88,38 +88,13 @@ void CheckPhiH3LAPDSystem::ExplicitTimeInt(
   }
 }
 
-void CheckPhiH3LAPDSystem::SolvePhi(
-    const Array<OneD, const Array<OneD, NekDouble>> &inarray) {
+// Set Phi solve RHS = w
+void CheckPhiH3LAPDSystem::GetPhiSolveRHS(
+    const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+    Array<OneD, NekDouble> &rhs) {
   int nPts = GetNpoints();
-
-  // Field indices
-  int ne_idx = m_field_to_index.get_idx("ne");
-  int phi_idx = m_field_to_index.get_idx("phi");
   int w_idx = m_field_to_index.get_idx("w");
-
-  // Set up variable coefficients
-  // ***Assumes field aligned with z-axis***
-  StdRegions::VarCoeffMap varcoeffs;
-  varcoeffs[StdRegions::eVarCoeffD00] = Array<OneD, NekDouble>(nPts, 1.0);
-  varcoeffs[StdRegions::eVarCoeffD01] = Array<OneD, NekDouble>(nPts, 0.0);
-  varcoeffs[StdRegions::eVarCoeffD02] = Array<OneD, NekDouble>(nPts, 0.0);
-  varcoeffs[StdRegions::eVarCoeffD11] = Array<OneD, NekDouble>(nPts, 1.0);
-  varcoeffs[StdRegions::eVarCoeffD12] = Array<OneD, NekDouble>(nPts, 0.0);
-  varcoeffs[StdRegions::eVarCoeffD22] = Array<OneD, NekDouble>(nPts, 0.0);
-
-  // Set up factors for electrostatic potential solve. We support a generic
-  // Helmholtz solve of the form (\nabla^2 - \lambda) u = f, so this sets
-  // \lambda to zero.
-  StdRegions::ConstFactorMap factors;
-  factors[StdRegions::eFactorLambda] = 0.0;
-
-  // Solve for phi. Output of this routine is in coefficient (spectral)
-  // space, so backwards transform to physical space since we'll need that
-  // for the advection step & computing drift velocity.
-  m_fields[phi_idx]->HelmSolve(
-      inarray[w_idx], m_fields[phi_idx]->UpdateCoeffs(), factors, varcoeffs);
-  m_fields[phi_idx]->BwdTrans(m_fields[phi_idx]->GetCoeffs(),
-                              m_fields[phi_idx]->UpdatePhys());
+  Vmath::Vcopy(nPts, inarray[w_idx], 1, rhs, 1);
 }
 
 } // namespace Nektar

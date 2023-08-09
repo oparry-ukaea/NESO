@@ -72,11 +72,8 @@ protected:
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
                        const NekDouble time) override;
 
-  void
-  SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
-
-private:
-  NekDouble m_d22;
+  void GetPhiSolveRHS(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+                      Array<OneD, NekDouble> &rhs) override;
 };
 
 } // namespace Nektar

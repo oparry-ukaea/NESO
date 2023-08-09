@@ -127,6 +127,10 @@ protected:
   void GetFluxVectorPD(const Array<OneD, Array<OneD, NekDouble>> &physfield,
                        Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
 
+  virtual void
+  GetPhiSolveRHS(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+                 Array<OneD, NekDouble> &rhs);
+
   Array<OneD, NekDouble> &
   GetVnAdv(Array<OneD, NekDouble> &traceVn,
            const Array<OneD, Array<OneD, NekDouble>> &vAdv);
@@ -138,8 +142,7 @@ protected:
 
   virtual void LoadParams();
 
-  virtual void
-  SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
+  void SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
 
   void ValidateFieldList();
 
@@ -171,6 +174,11 @@ protected:
   NekDouble m_Td;
   // Electron temperature in eV
   NekDouble m_Te;
+  //---------------------------------------------------------------------------
+  // Coefficient factors for Helmsolve
+  NekDouble m_d00;
+  NekDouble m_d11;
+  NekDouble m_d22;
   //---------------------------------------------------------------------------
   // Factors used in collision coeff calculation
   // Density-independent part of the Coulomb logarithm; read from config
@@ -213,7 +221,7 @@ protected:
   // Debugging
   void PrintArrVals(const Array<OneD, NekDouble> &arr, int num, int stride = 1,
                     std::string label = "", bool all_tasks = false);
-  void PrintArrSize(Array<OneD, NekDouble> &arr, std::string label = "",
+  void PrintArrSize(const Array<OneD, NekDouble> &arr, std::string label = "",
                     bool all_tasks = false);
 };
 

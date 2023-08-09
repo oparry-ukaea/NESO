@@ -80,12 +80,6 @@ protected:
                        const NekDouble time) override;
 
   void LoadParams() override;
-
-  void
-  SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
-
-private:
-  NekDouble m_d22;
 };
 
 } // namespace Nektar
