@@ -7,7 +7,7 @@
         The composite index for the domain is expected to be 0 if the mesh was generated from either of the .geo files
      -->
     <EXPANSIONS>
-       <E COMPOSITE="C[0]" NUMMODES="2" TYPE="MODIFIED" FIELDS="ne,Ge,Gd,w,phi" />
+       <E COMPOSITE="C[0]" NUMMODES="7" TYPE="MODIFIED" FIELDS="ne,Ge,Gd,w,phi" />
     </EXPANSIONS>
 
     <CONDITIONS>
@@ -27,8 +27,8 @@
         </GLOBALSYSSOLNINFO>
 
         <PARAMETERS>
-            <P> TimeStep      = 0.5               </P>
-            <P> NumSteps      = 10000             </P>
+            <P> TimeStep      = 0.0025            </P>
+            <P> NumSteps      = 8000              </P>
             <P> TFinal        = NumSteps*TimeStep </P>
             <P> IO_InfoSteps  = 10                </P>
             <P> IO_CheckSteps = 100               </P>
@@ -77,6 +77,11 @@
             <P> logLambda_const = 1.0  </P> <!-- See line 2 of eqn. 134 in equations doc (v1.30) -->
             <P> d22             = 0.0  </P> <!-- d22 Coeff for Helmholtz solve -->
             <P> use_varcoeffs   = -1  </P> <!-- >0 to use varcoeffs -->
+            <!-- HW params -->
+            <P> alpha = 2.0 </P>
+            <P> kappa = 1.0 </P>
+            <!-- Scaling factor for ICs -->
+            <P> s = 0.5 </P>
         </PARAMETERS>
 
         <VARIABLES>
@@ -88,40 +93,69 @@
         </VARIABLES>
 
         <BOUNDARYREGIONS>
-            <B ID="0"> C[1] </B> <!-- Long side(s) -->
-            <B ID="1"> C[2] </B> <!-- Low-z end -->
-            <B ID="2"> C[3] </B> <!-- High-z end -->
+            <B ID="0"> C[1] </B> <!-- Low x -->
+            <B ID="1"> C[2] </B> <!-- High x -->
+            <B ID="2"> C[3] </B> <!-- Low y -->
+            <B ID="3"> C[4] </B> <!-- High y -->
+            <B ID="4"> C[5] </B> <!-- Low-z end -->
+            <B ID="5"> C[6] </B> <!-- High-z end -->
         </BOUNDARYREGIONS>
 
+        <!-- Periodic conditions for all fields on all boundaries -->
         <BOUNDARYCONDITIONS>
             <REGION REF="0">
-                <D VAR="ne" VALUE="0" />
-                <D VAR="Ge" VALUE="0" />
-                <D VAR="Gd" VALUE="0" />
-                <D VAR="w" VALUE="0" />
-                <D VAR="phi" VALUE="0" />
-            </REGION>
-            <REGION REF="1">
-                <P VAR="ne"  VALUE="[2]" />
-                <P VAR="Ge"  VALUE="[2]" />
-                <P VAR="Gd"  VALUE="[2]" />
-                <P VAR="w"   VALUE="[2]" />
-                <P VAR="phi" VALUE="[2]" />
-            </REGION>
-            <REGION REF="2">
                 <P VAR="ne"  VALUE="[1]" />
                 <P VAR="Ge"  VALUE="[1]" />
                 <P VAR="Gd"  VALUE="[1]" />
                 <P VAR="w"   VALUE="[1]" />
                 <P VAR="phi" VALUE="[1]" />
             </REGION>
+            <REGION REF="1">
+                <P VAR="ne"  VALUE="[0]" />
+                <P VAR="Ge"  VALUE="[0]" />
+                <P VAR="Gd"  VALUE="[0]" />
+                <P VAR="w"   VALUE="[0]" />
+                <P VAR="phi" VALUE="[0]" />
+            </REGION>
+	        <REGION REF="2">
+                <P VAR="ne"  VALUE="[3]" />
+                <P VAR="Ge"  VALUE="[3]" />
+                <P VAR="Gd"  VALUE="[3]" />
+                <P VAR="w"   VALUE="[3]" />
+                <P VAR="phi" VALUE="[3]" />
+            </REGION>
+            <REGION REF="3">
+                <P VAR="ne"  VALUE="[2]" />
+                <P VAR="Ge"  VALUE="[2]" />
+                <P VAR="Gd"  VALUE="[2]" />
+                <P VAR="w"   VALUE="[2]" />
+                <P VAR="phi" VALUE="[2]" />
+            </REGION>
+            <REGION REF="4">
+                <P VAR="ne"  VALUE="[5]" />
+                <P VAR="Ge"  VALUE="[5]" />
+                <P VAR="Gd"  VALUE="[5]" />
+                <P VAR="w"   VALUE="[5]" />
+                <P VAR="phi" VALUE="[5]" />
+            </REGION>
+            <REGION REF="5">
+                <P VAR="ne"  VALUE="[4]" />
+                <P VAR="Ge"  VALUE="[4]" />
+                <P VAR="Gd"  VALUE="[4]" />
+                <P VAR="w"   VALUE="[4]" />
+                <P VAR="phi" VALUE="[4]" />
+            </REGION>
         </BOUNDARYCONDITIONS>
         <FUNCTION NAME="InitialConditions">
-            <E VAR="ne"  DOMAIN="0" VALUE="0.0*(1.0+0.1*sin(4*2*3.14159265*z/10))*(1e-1 * exp(-((x+0.0)*(x+0.0) + (y)*(y)+0.0*(z-5.0)*(z-5.0))/Rmax/Rmax))" />
+            <E VAR="ne"  DOMAIN="0" VALUE="exp((-x*x-y*y)/(s*s))*sin(4*PI*z/10)" />
             <E VAR="Ge"  DOMAIN="0" VALUE="0.0" />
             <E VAR="Gd"  DOMAIN="0" VALUE="0.0" />
-            <E VAR="w"   DOMAIN="0" VALUE="0.1*sin(4*3.14159265*x/5)*sin(4*3.14159265*y/5)*sin(4*3.14159265*z/5)" />
-            <E VAR="phi" DOMAIN="0" VALUE="0" />
+            <E VAR="w"   DOMAIN="0" VALUE="(4*exp((-x*x-y*y)/(s*s))*(-s*s+x*x+y*y)/s^4)*sin(4*PI*z/10)" />
+            <E VAR="phi" DOMAIN="0" VALUE="exp(-(x*x+y*y)/(s*s))*sin(4*PI*z/10)" />
+        </FUNCTION>
+        <FUNCTION NAME="dens_src">
+            <!-- Turn off density source-->
+            <E VAR="ne" VALUE="0.0"/>
         </FUNCTION>
     </CONDITIONS>
 </NEKTAR>

@@ -69,13 +69,6 @@ protected:
   HWSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
            const SpatialDomains::MeshGraphSharedPtr &pGraph);
 
-  // void AddDivvParTerm(const Array<OneD, const Array<OneD, NekDouble>>
-  // &inarray,
-  //                     Array<OneD, Array<OneD, NekDouble>> &outarray);
-
-  void CalcEAndAdvVels(
-      const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
-
   void ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
                        const NekDouble time) override;
@@ -86,7 +79,8 @@ protected:
   void LoadParams() override;
 
 private:
-  NekDouble m_HW_coeff;
+  NekDouble m_alpha;
+  NekDouble m_kappa;
 };
 
 } // namespace Nektar

@@ -28,11 +28,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-// Description: Hasegawa-Waketani equation system as an intermediate step
-// towards the full H3-LAPD problem.  Implemented by Ed Threlfall on 28/7/2023
-// following email from Ben Dudson. System is basically advection + parallel
-// Ohm's law only one parameter: \omega_{ce} / \nu_{ei} which is `large' ...
-// evolves ne, w, phi only, no momenta, no ions
+// Description: 2D Hasegawa-Waketani equation system as an intermediate step
+// towards the full H3-LAPD problem.  Implemented by Ed Threlfall in August 2023
+// after realizing he didn't know how to do numerical flux terms in 3D
+// Hasegawa-Wakatani. Parameter choices are same as in Nektar-Driftwave 2D
+// proxyapp. Evolves ne, w, phi only, no momenta, no ions
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include <LibUtilities/BasicUtils/Vmath.hpp>
@@ -45,42 +45,14 @@ namespace Nektar {
 std::string HWSystem::className =
     SolverUtils::GetEquationSystemFactory().RegisterCreatorFunction(
         "HWLAPD", HWSystem::create,
-        "Hasegawa-Waketani equation system as an intermediate step towards the "
-        "full H3-LAPD problem");
+        "(2D) Hasegawa-Waketani equation system as an intermediate step "
+        "towards the full H3-LAPD problem");
 
 HWSystem::HWSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
                    const SpatialDomains::MeshGraphSharedPtr &pGraph)
     : UnsteadySystem(pSession, pGraph), AdvectionSystem(pSession, pGraph),
       H3LAPDSystem(pSession, pGraph) {
   m_required_flds = {"ne", "Gd", "Ge", "w", "phi"};
-}
-
-/**
- * Override CalcEAndAdvVels in order to set m_vAdvElec = m_vExB
- */
-void HWSystem::CalcEAndAdvVels(
-    const Array<OneD, const Array<OneD, NekDouble>> &inarray) {
-  int phi_idx = m_field_to_index.get_idx("phi");
-  int nPts = GetNpoints();
-  m_fields[phi_idx]->PhysDeriv(m_fields[phi_idx]->GetPhys(), m_E[0], m_E[1],
-                               m_E[2]);
-  Vmath::Neg(nPts, m_E[0], 1);
-  Vmath::Neg(nPts, m_E[1], 1);
-  Vmath::Neg(nPts, m_E[2], 1);
-
-  // v_ExB = Evec x Bvec / B^2
-  Vmath::Svtsvtp(nPts, m_B[2] / m_Bmag / m_Bmag, m_E[1], 1,
-                 -m_B[1] / m_Bmag / m_Bmag, m_E[2], 1, m_vExB[0], 1);
-  Vmath::Svtsvtp(nPts, m_B[0] / m_Bmag / m_Bmag, m_E[2], 1,
-                 -m_B[2] / m_Bmag / m_Bmag, m_E[0], 1, m_vExB[1], 1);
-  Vmath::Svtsvtp(nPts, m_B[1] / m_Bmag / m_Bmag, m_E[0], 1,
-                 -m_B[0] / m_Bmag / m_Bmag, m_E[1], 1, m_vExB[2], 1);
-
-  // Set electron advection velocity = vExB
-  // (m_vAdvIons isn't used, so isn't calculated here)
-  for (auto iDim = 0; iDim < m_graph->GetSpaceDimension(); iDim++) {
-    Vmath::Vcopy(nPts, m_vExB[iDim], 1, m_vAdvElec[iDim], 1);
-  }
 }
 
 void HWSystem::ExplicitTimeInt(
@@ -103,7 +75,7 @@ void HWSystem::ExplicitTimeInt(
   // Solver for electrostatic potential.
   SolvePhi(inarray);
 
-  // Calculate E from Phi, as well as corresponding advection velocities
+  // Calculate electric field from Phi, as well as corresponding drift velocity
   CalcEAndAdvVels(inarray);
 
   // Get field indices
@@ -118,38 +90,42 @@ void HWSystem::ExplicitTimeInt(
   AddAdvTerms({"ne"}, m_advElec, m_vExB, inarray, outarray, time);
   AddAdvTerms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
 
-  // Terms from 3D Hasegawa-Wakatani
-  // Compute d^2 n/dz^2
-  Array<OneD, NekDouble> first_deriv(nPts), HWterm_ne(nPts);
-  m_fields[ne_idx]->PhysDeriv(2, m_fields[ne_idx]->GetPhys(), first_deriv);
-  m_fields[ne_idx]->PhysDeriv(2, first_deriv, HWterm_ne);
-  // Compute d^2 phi / dz^2
-  Array<OneD, NekDouble> HWterm_phi(nPts);
-  m_fields[ne_idx]->PhysDeriv(2, m_fields[phi_idx]->GetPhys(), first_deriv);
-  m_fields[ne_idx]->PhysDeriv(2, first_deriv, HWterm_phi);
-  // Compute m_HW_coeff*(d^2 n/dz^2 - d^2 Phi/dz^2)
-  Array<OneD, NekDouble> HWterm_all(nPts);
-  Vmath::Vsub(nPts, HWterm_ne, 1, HWterm_phi, 1, HWterm_all, 1);
-  Vmath::Smul(nPts, m_HW_coeff, HWterm_all, 1, HWterm_all, 1);
-  // Add result to RHS of ne and w eqns
-  Vmath::Vadd(nPts, outarray[ne_idx], 1, HWterm_all, 1, outarray[ne_idx], 1);
-  Vmath::Vadd(nPts, outarray[w_idx], 1, HWterm_all, 1, outarray[w_idx], 1);
+  // Add \alpha*(\phi-n_e) to RHS
+  Array<OneD, NekDouble> HWterm_2D_alpha(nPts);
+  Vmath::Vsub(nPts, m_fields[phi_idx]->GetPhys(), 1,
+              m_fields[ne_idx]->GetPhys(), 1, HWterm_2D_alpha, 1);
+  Vmath::Smul(nPts, m_alpha, HWterm_2D_alpha, 1, HWterm_2D_alpha, 1);
+  Vmath::Vadd(nPts, outarray[w_idx], 1, HWterm_2D_alpha, 1, outarray[w_idx], 1);
+  Vmath::Vadd(nPts, outarray[ne_idx], 1, HWterm_2D_alpha, 1, outarray[ne_idx],
+              1);
+
+  // Add \kappa*\dpartial\phi/\dpartial y to RHS
+  Array<OneD, NekDouble> HWterm_2D_kappa(nPts);
+  m_fields[phi_idx]->PhysDeriv(1, m_fields[phi_idx]->GetPhys(),
+                               HWterm_2D_kappa);
+  Vmath::Vsub(nPts, outarray[ne_idx], 1, HWterm_2D_kappa, 1, outarray[ne_idx],
+              1);
 }
 
-// Set Phi solve RHS = -w
+// Set Phi solve RHS = w
 void HWSystem::GetPhiSolveRHS(
     const Array<OneD, const Array<OneD, NekDouble>> &inarray,
     Array<OneD, NekDouble> &rhs) {
   int nPts = GetNpoints();
   int w_idx = m_field_to_index.get_idx("w");
-  Vmath::Smul(nPts, -1.0, inarray[w_idx], 1, rhs, 1);
+  // OP: Orig version has RHS=w, presumably it ought be alpha*w? :
+  // Vmath::Smul(nPts, m_alpha, inarray[w_idx], 1, rhs, 1);
+  Vmath::Vcopy(nPts, inarray[w_idx], 1, rhs, 1);
 }
 
 void HWSystem::LoadParams() {
   H3LAPDSystem::LoadParams();
 
-  // Hasegawa-Waketani coefficient (= omega/nu)
-  m_session->LoadParameter("HW_coeff", m_HW_coeff, 1e4);
+  // alpha
+  m_session->LoadParameter("alpha", m_alpha, 2);
+
+  // kappa
+  m_session->LoadParameter("kappa", m_kappa, 1);
 }
 
 } // namespace Nektar
