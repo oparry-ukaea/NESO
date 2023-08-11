@@ -221,6 +221,21 @@ void H3LAPDSystem::CalcEAndAdvVels(
   Vmath::Svtsvtp(nPts, m_B[1] / m_Bmag / m_Bmag, m_E[0], 1,
                  -m_B[0] / m_Bmag / m_Bmag, m_E[1], 1, m_vExB[2], 1);
 
+  // Optionally override vExB with functions
+  std::vector<std::string> vExBfuncs = {"vExB0", "vExB1", "vExB2"};
+  if (m_session->DefinesFunction(vExBfuncs[0]) ||
+      m_session->DefinesFunction(vExBfuncs[1]) ||
+      m_session->DefinesFunction(vExBfuncs[2])) {
+    Array<OneD, NekDouble> tmpx(nPts), tmpy(nPts), tmpz(nPts);
+    m_fields[phi_idx]->GetCoords(tmpx, tmpy, tmpz);
+    for (auto idx = 0; idx < vExBfuncs.size(); idx++) {
+      Array<OneD, NekDouble> tmpv(nPts);
+      LibUtilities::EquationSharedPtr func =
+          m_session->GetFunction(vExBfuncs[idx], phi_idx);
+      func->Evaluate(tmpx, tmpy, tmpz, m_vExB[idx]);
+    }
+  }
+
   // v_par,d = Gd / max(ne,n_floor) / md   (N.B. ne === nd)
   int Gd_idx = m_field_to_index.get_idx("Gd");
   int ne_idx = m_field_to_index.get_idx("ne");
