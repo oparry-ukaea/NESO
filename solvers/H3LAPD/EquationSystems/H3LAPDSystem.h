@@ -132,6 +132,8 @@ protected:
   GetPhiSolveRHS(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                  Array<OneD, NekDouble> &rhs);
 
+  bool GetScaledCoords(Array<OneD, NekDouble> &r, Array<OneD, NekDouble> &z);
+
   Array<OneD, NekDouble> &
   GetVnAdv(Array<OneD, NekDouble> &traceVn,
            const Array<OneD, Array<OneD, NekDouble>> &vAdv);
@@ -142,7 +144,7 @@ protected:
   Array<OneD, NekDouble> &GetVnAdvPD();
 
   virtual void LoadParams();
-
+  void SetMixedModeICs(const int &n_modes, const int &peak_mode);
   void
   SetUserDefBoundaryConditions(Array<OneD, Array<OneD, NekDouble>> &physarray,
                                NekDouble time);
@@ -150,6 +152,8 @@ protected:
   void SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
 
   void ValidateFieldList();
+
+  virtual void v_DoInitialise() override;
 
   virtual void v_InitObject(bool DeclareField) override;
 

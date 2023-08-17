@@ -37,6 +37,9 @@
 
 #include "H3LAPDSystem.h"
 
+#include <cmath>
+#include <random>
+
 namespace Nektar {
 std::string H3LAPDSystem::className =
     SolverUtils::GetEquationSystemFactory().RegisterCreatorFunction(
@@ -51,6 +54,90 @@ H3LAPDSystem::H3LAPDSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
       m_vAdvIons(pGraph->GetSpaceDimension()),
       m_vExB(pGraph->GetSpaceDimension()), m_E(pGraph->GetSpaceDimension()) {
   m_required_flds = {"ne", "Ge", "Gd", "w", "phi"};
+}
+
+bool H3LAPDSystem::GetScaledCoords(Array<OneD, NekDouble> &tmpr,
+                                   Array<OneD, NekDouble> &tmpz) {
+  int nPts = GetNpoints();
+  ASSERTL1(tmpr.size() == nPts,
+           "GetScaledCoords: supplied r array is the wrong size.");
+  ASSERTL1(tmpz.size() == nPts,
+           "GetScaledCoords: supplied z array is the wrong size.");
+
+  // Get coords and transform to scaled values used by Hermes-3
+  Array<OneD, NekDouble> tmpx(nPts), tmpy(nPts);
+  m_fields[0]->GetCoords(tmpx, tmpy, tmpz);
+  if (m_session->DefinesParameter("xsize") &&
+      m_session->DefinesParameter("ysize")) {
+    NekDouble xsize = m_session->GetParameter("xsize");
+    Vmath::Smul(nPts, 2.0 / xsize, tmpx, 1, tmpx, 1);
+    NekDouble ysize = m_session->GetParameter("ysize");
+    Vmath::Smul(nPts, 2.0 / ysize, tmpy, 1, tmpy, 1);
+    // r2 = (x_s*x_s + y_s*y_s)/sqrt(2)
+    Vmath::Vvtvvtp(nPts, tmpx, 1, tmpx, 1, tmpy, 1, tmpy, 1, tmpr, 1);
+    Vmath::Vsqrt(nPts, tmpr, 1, tmpr, 1);
+    Vmath::Smul(nPts, 1.0 / sqrt(2), tmpr, 1, tmpr, 1);
+  } else if (m_session->DefinesParameter("Rmax")) {
+    PrintRankZero("Rmax-scaled version of GetScaledCoords not implemented yet");
+    return false;
+  } else {
+    PrintRankZero("WARNING: Can't set mixed mode ICs without definitions "
+                  "for either xsize AND ysize OR Rmax - skipping!");
+    return false;
+  }
+  if (m_session->DefinesParameter("zsize")) {
+    NekDouble zsize = m_session->GetParameter("zsize");
+    Vmath::Smul(nPts, 1.0 / zsize, tmpz, 1, tmpz, 1);
+  } else {
+    PrintRankZero("WARNING: Can't set mixed mode ICs without definition "
+                  "for zsize - skipping!");
+    return false;
+  }
+  return true;
+}
+
+double EvalMode(int mode, double v, double phase) {
+  double prefac = 1.0 / (1.0 + std::abs(mode - 4.0));
+  return prefac * prefac * std::cos(mode * v + phase);
+}
+
+void H3LAPDSystem::SetMixedModeICs(const int &n_modes, const int &peak_mode) {
+  // Set up random mode phases
+  int global_seed = 1;
+  int seed = global_seed + m_session->GetComm()->GetRank();
+  // Generator
+  std::mt19937 rng(seed);
+  // Distribution: uniform on [-pi, +pi]
+  std::uniform_real_distribution<double> dist(-M_PI, M_PI);
+  // Setup mode_num->phase map
+  std::map<int, double> phase;
+  for (int imode = 0; imode < n_modes; imode++) {
+    phase[imode] = dist(rng);
+  }
+
+  // Compute scaled coords a'la H3
+  int nPts = GetNpoints();
+  Array<OneD, NekDouble> rs(nPts), zs(nPts);
+  bool gotCoords = GetScaledCoords(rs, zs);
+  if (!gotCoords) {
+    // Bail out if coordinate scaling failed
+    return;
+  }
+
+  // Get a non-const ref to ne phys vals
+  int ne_idx = m_field_to_index.get_idx("ne");
+  auto ne_phys = m_fields[ne_idx]->UpdatePhys();
+  // Vmath::Zero(nPts, ne_phys, 1);
+
+  // Set ne(rs,zs) = 0.1*exp(-r^2) + 1e-5*(mixmode(zs)+mixmode(4*zs-rs))
+  for (int iPt = 0; iPt < ne_phys.size(); iPt++) {
+    double mode_sum = 0;
+    for (int imode = 0; imode < n_modes; imode++) {
+      mode_sum += EvalMode(imode, zs[iPt], phase[imode]);
+      mode_sum += EvalMode(imode, 4 * zs[iPt] - rs[iPt], phase[imode]);
+    }
+    ne_phys[iPt] = 0.1 * std::exp(-rs[iPt] * rs[iPt]) + 1e-5 * mode_sum;
+  }
 }
 
 void H3LAPDSystem::AddAdvTerms(
@@ -621,6 +708,19 @@ void H3LAPDSystem::ValidateFieldList() {
     ASSERTL0(m_field_to_index.get_idx(fld_name) >= 0,
              "Required field [" + fld_name + "] is not defined.");
   }
+}
+
+/**
+ * @brief Sets the initial conditions.
+ */
+void H3LAPDSystem::v_DoInitialise() {
+  UnsteadySystem::v_DoInitialise();
+
+  // Set 'mixed mode' distribution for ne, <n_modes> in total, max amplitude at
+  // <peak_mode>
+  const int n_modes = 14;
+  const int peak_mode = 4;
+  SetMixedModeICs(n_modes, peak_mode);
 }
 
 /**
