@@ -231,6 +231,9 @@ protected:
                     std::string label = "", bool all_tasks = false);
   void PrintArrSize(const Array<OneD, NekDouble> &arr, std::string label = "",
                     bool all_tasks = false);
+
+  // Map to allow terms to be disabled
+  std::map<std::string, bool> m_disabled;
 };
 
 } // namespace Nektar

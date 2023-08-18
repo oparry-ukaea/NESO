@@ -317,18 +317,32 @@ void H3LAPDSystem::ExplicitTimeInt(
   CalcEAndAdvVels(inarray);
 
   // Add advection terms to outarray, handling (ne, Ge), Gd and w separately
-  AddAdvTerms({"ne", "Ge"}, m_advElec, m_vAdvElec, inarray, outarray, time);
-  AddAdvTerms({"Gd"}, m_advIons, m_vAdvIons, inarray, outarray, time);
-  AddAdvTerms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
+  if (!m_disabled["elec_advection"]) {
+    AddAdvTerms({"ne", "Ge"}, m_advElec, m_vAdvElec, inarray, outarray, time);
+  }
+  if (!m_disabled["ion_advection"]) {
+    AddAdvTerms({"Gd"}, m_advIons, m_vAdvIons, inarray, outarray, time);
+  }
+  if (!m_disabled["vort_advection"]) {
+    AddAdvTerms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
+  }
+  if (!m_disabled["gradP"]) {
+    AddGradPTerms(inarray, outarray);
+  }
 
-  AddGradPTerms(inarray, outarray);
+  if (!m_disabled["EPar"]) {
+    AddEParTerms(inarray, outarray);
+  }
 
-  AddEParTerms(inarray, outarray);
+  if (!m_disabled["collisions"]) {
+    // Add collision terms to RHS of Ge, Gd eqns
+    AddCollisionTerms(inarray, outarray);
+  }
 
-  // Add collision terms to RHS of Ge, Gd eqns
-  AddCollisionTerms(inarray, outarray);
-  // Add polarisation drift term to vorticity eqn RHS
-  AddAdvTerms({"ne"}, m_advPD, m_vAdvDiffPar, inarray, outarray, time, {"w"});
+  if (!m_disabled["polarisation_drift"]) {
+    // Add polarisation drift term to vorticity eqn RHS
+    AddAdvTerms({"ne"}, m_advPD, m_vAdvDiffPar, inarray, outarray, time, {"w"});
+  }
 
   // Add density source term
   int ne_idx = m_field_to_index.get_idx("ne");
@@ -517,6 +531,16 @@ void H3LAPDSystem::LoadParams() {
 
   // Type of Riemann solver to use. Default = "Upwind"
   m_session->LoadSolverInfo("UpwindType", m_RiemSolvType, "Upwind");
+
+  // Generate map that allows easy disabling of terms
+  std::vector<std::string> term_names = {
+      "collisions",    "elec_advection",     "EPar",          "gradP",
+      "ion_advection", "polarisation_drift", "vort_advection"};
+  m_disabled = std::map<std::string, bool>();
+  for (auto &term_name : term_names) {
+    std::string param_name = "disable_" + term_name;
+    m_disabled[term_name] = m_session->DefinesParameter(param_name);
+  }
 }
 
 void H3LAPDSystem::PrintArrSize(const Array<OneD, NekDouble> &arr,
