@@ -139,6 +139,18 @@ void H3LAPDSystem::SetMixedModeICs(const int &n_modes, const int &peak_mode) {
     ne_phys[iPt] = 0.1 * std::exp(-rs[iPt] * rs[iPt]) + 1e-5 * mode_sum;
   }
   m_fields[ne_idx]->FwdTrans(ne_phys, m_fields[ne_idx]->UpdateCoeffs());
+
+  // Set Ge=me*ne*vconst
+  double vconst;
+  m_session->LoadParameter("vtmp", vconst, 3.0);
+
+  int Ge_idx = m_field_to_index.get_idx("Ge");
+  Vmath::Smul(nPts, m_me * vconst, ne_phys, 1, m_fields[Ge_idx]->UpdatePhys(),
+              1);
+
+  int Gd_idx = m_field_to_index.get_idx("Gd");
+  Vmath::Smul(nPts, m_md * vconst, ne_phys, 1, m_fields[Gd_idx]->UpdatePhys(),
+              1);
 }
 
 void H3LAPDSystem::AddAdvTerms(
