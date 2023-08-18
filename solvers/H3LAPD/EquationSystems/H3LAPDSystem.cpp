@@ -138,6 +138,7 @@ void H3LAPDSystem::SetMixedModeICs(const int &n_modes, const int &peak_mode) {
     }
     ne_phys[iPt] = 0.1 * std::exp(-rs[iPt] * rs[iPt]) + 1e-5 * mode_sum;
   }
+  m_fields[ne_idx]->FwdTrans(ne_phys, m_fields[ne_idx]->UpdateCoeffs());
 }
 
 void H3LAPDSystem::AddAdvTerms(
