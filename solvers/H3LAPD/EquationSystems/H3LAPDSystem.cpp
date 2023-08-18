@@ -297,7 +297,8 @@ void H3LAPDSystem::ExplicitTimeInt(
     auto fidx = m_field_to_index.get_idx(var);
     for (auto ii = 0; ii < inarray[fidx].size(); ii++) {
       if (!std::isfinite(inarray[fidx][ii])) {
-        std::cout << "NaN in field " << var << ", aborting." << std::endl;
+        std::cout << "NaN in field " << var << " at index " << ii
+                  << ", aborting." << std::endl;
         exit(1);
       }
     }
