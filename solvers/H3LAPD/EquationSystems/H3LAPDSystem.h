@@ -232,6 +232,16 @@ protected:
   void PrintArrSize(const Array<OneD, NekDouble> &arr, std::string label = "",
                     bool all_tasks = false);
 
+  // Variadic template for flexible printing
+  void PrintRankZero() { std::cout << std::endl; }
+  template <typename T, typename... Args>
+  void PrintRankZero(T t, Args... args) {
+    if (m_session->GetComm()->TreatAsRankZero()) {
+      std::cout << t;
+      PrintRankZero(args...);
+    }
+  }
+
   // Map to allow terms to be disabled
   std::map<std::string, bool> m_disabled;
 };
