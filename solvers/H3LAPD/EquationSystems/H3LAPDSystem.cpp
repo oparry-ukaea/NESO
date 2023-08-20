@@ -283,11 +283,11 @@ void H3LAPDSystem::DoOdeProjection(
     Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
   int nvariables = inarray.size();
   int npoints = inarray[0].size();
-  // SetBoundaryConditions(time);
 
   for (int i = 0; i < nvariables; ++i) {
     Vmath::Vcopy(npoints, inarray[i], 1, outarray[i], 1);
   }
+  SetUserDefBoundaryConditions(outarray, time);
 }
 
 void H3LAPDSystem::ExplicitTimeInt(
@@ -542,6 +542,25 @@ void H3LAPDSystem::PrintArrVals(const Array<OneD, NekDouble> &arr, int num,
   }
 }
 
+void H3LAPDSystem::SetUserDefBoundaryConditions(
+    Array<OneD, Array<OneD, NekDouble>> &physarray, NekDouble time) {
+  int nTracePts = GetTraceTotPoints();
+  int nvariables = physarray.size();
+
+  Array<OneD, Array<OneD, NekDouble>> Fwd(nvariables);
+  for (int i = 0; i < nvariables; ++i) {
+    Fwd[i] = Array<OneD, NekDouble>(nTracePts);
+    m_fields[i]->ExtractTracePhys(physarray[i], Fwd[i]);
+  }
+
+  if (m_custom_BCs.size()) {
+    // Loop over user-defined boundary conditions
+    for (auto &x : m_custom_BCs) {
+      x->Apply(Fwd, physarray, time);
+    }
+  }
+}
+
 void H3LAPDSystem::SolvePhi(
     const Array<OneD, const Array<OneD, NekDouble>> &inarray) {
 
@@ -695,6 +714,24 @@ void H3LAPDSystem::v_InitObject(bool DeclareField) {
   m_advVort->SetRiemannSolver(m_riemannSolverVort);
   m_advVort->InitObject(m_session, m_fields);
 
+  // User-defined boundary conditions
+  for (int ifld = 0; ifld < m_fields.size(); ifld++) {
+    int cnt = 0;
+    for (int n = 0; n < m_fields[ifld]->GetBndConditions().size(); ++n) {
+      BoundaryConditionShPtr cnd = m_fields[ifld]->GetBndConditions()[n];
+      if (cnd->GetBoundaryConditionType() != SpatialDomains::ePeriodic) {
+        std::string type = cnd->GetUserDefined();
+        if (!type.empty()) {
+          CustomBCsSharedPtr BCs_instance =
+              GetCustomBCsFactory().CreateInstance(type, m_session, m_fields,
+                                                   m_traceNormals, ifld,
+                                                   m_spacedim, n, cnt, cnd);
+          m_custom_BCs.push_back(BCs_instance);
+        }
+        cnt += m_fields[ifld]->GetBndCondExpansions()[n]->GetExpSize();
+      }
+    }
+  }
   // The m_ode object defines the timestepping to be used, and lives in
   // the SolverUtils::UnsteadySystem class. For explicit solvers, you need
   // to supply a right-hand side function, and a projection function

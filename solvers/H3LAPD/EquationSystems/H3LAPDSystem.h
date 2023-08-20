@@ -37,6 +37,7 @@
 
 #include "nektar_interface/utilities.hpp"
 
+#include "BoundaryConditions/CustomBCs.h"
 #include <LibUtilities/Memory/NekMemoryManager.hpp>
 #include <SolverUtils/AdvectionSystem.h>
 #include <SolverUtils/EquationSystem.h>
@@ -142,6 +143,10 @@ protected:
 
   virtual void LoadParams();
 
+  void
+  SetUserDefBoundaryConditions(Array<OneD, Array<OneD, NekDouble>> &physarray,
+                               NekDouble time);
+
   void SolvePhi(const Array<OneD, const Array<OneD, NekDouble>> &inarray);
 
   void ValidateFieldList();
@@ -217,6 +222,9 @@ protected:
   // Storage for electron, ion parallel velocities
   Array<OneD, NekDouble> m_vParIons;
   Array<OneD, NekDouble> m_vParElec;
+
+  // User defined boundary conditions
+  std::vector<CustomBCsSharedPtr> m_custom_BCs;
   //---------------------------------------------------------------------------
   // Debugging
   void PrintArrVals(const Array<OneD, NekDouble> &arr, int num, int stride = 1,
