@@ -770,6 +770,11 @@ void H3LAPDSystem::v_InitObject(bool DeclareField) {
 
   // Setup object to evaluate density field
   m_particle_sys->setup_evaluate_ne(m_discont_fields["ne"]);
+
+  // Setup mass recording
+  m_diag_mass_recording =
+      std::make_shared<MassRecording<MultiRegions::DisContField>>(
+          m_session, m_particle_sys, m_discont_fields["ne"]);
 }
 
 bool H3LAPDSystem::v_PostIntegrate(int step) {

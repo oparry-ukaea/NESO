@@ -69,6 +69,15 @@ public:
   /// Free particle system memory on destruction.
   virtual ~H3LAPDSystem() { m_particle_sys->free(); }
 
+  //---------------------------------------------------------------------------
+  // Diagnostics
+  // Object that allows optional recording of stats related to mass conservation
+  std::shared_ptr<MassRecording<MultiRegions::DisContField>>
+      m_diag_mass_recording;
+
+  // Callback handler to call user defined callbacks.
+  SolverCallbackHandler<H3LAPDSystem> m_solver_callback_handler;
+
 protected:
   /// Protected constructor. Since we use a factory pattern, objects should be
   /// constructed via the SolverUtils::EquationSystem factory.
@@ -162,7 +171,6 @@ protected:
 
   void ZeroOutArray(Array<OneD, Array<OneD, NekDouble>> &outarray);
 
-protected:
   // Advection type
   std::string m_advType;
   // Magnetic field vector
@@ -230,15 +238,6 @@ protected:
   // Storage for electron, ion parallel velocities
   Array<OneD, NekDouble> m_vParIons;
   Array<OneD, NekDouble> m_vParElec;
-
-  //---------------------------------------------------------------------------
-  // Diagnostics
-  // Callback handler to call user defined callbacks.
-  SolverCallbackHandler<H3LAPDSystem> m_solver_callback_handler;
-
-  // Object that allows optional recording of stats related to mass conservation
-  std::shared_ptr<MassRecording<MultiRegions::DisContField>>
-      m_diag_mass_recording;
 
   //---------------------------------------------------------------------------
   // Particles system and associated parameters
