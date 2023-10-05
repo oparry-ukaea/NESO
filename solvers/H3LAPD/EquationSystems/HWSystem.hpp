@@ -40,6 +40,7 @@
 
 #include <LibUtilities/Memory/NekMemoryManager.hpp>
 #include <SolverUtils/AdvectionSystem.h>
+#include <SolverUtils/Diffusion/Diffusion.h>
 #include <SolverUtils/EquationSystem.h>
 #include <SolverUtils/Forcing/Forcing.h>
 #include <SolverUtils/RiemannSolvers/RiemannSolver.h>
@@ -69,18 +70,37 @@ protected:
   HWSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
            const SpatialDomains::MeshGraphSharedPtr &pGraph);
 
+  void AddDiffTerms(
+      std::vector<std::string> field_names,
+      const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+      Array<OneD, Array<OneD, NekDouble>> &outarray,
+      std::vector<std::string> eqn_labels = std::vector<std::string>());
+
   void ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                        Array<OneD, Array<OneD, NekDouble>> &outarray,
                        const NekDouble time) override;
+
+  void GetFluxVectorDiff(
+      const Array<OneD, Array<OneD, NekDouble>> &inarray,
+      const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &qfield,
+      Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &viscousTensor);
 
   void GetPhiSolveRHS(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
                       Array<OneD, NekDouble> &rhs) override;
 
   void LoadParams() override;
 
+  virtual void v_InitObject(bool DeclareField) override;
+
 private:
   NekDouble m_alpha;
   NekDouble m_kappa;
+
+  // Diffusion type string
+  std::string m_difftype;
+
+  // Diffusion object
+  SolverUtils::DiffusionSharedPtr m_diffusion;
 };
 
 } // namespace Nektar
