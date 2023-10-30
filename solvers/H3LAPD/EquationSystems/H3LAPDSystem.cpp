@@ -35,7 +35,7 @@
 #include <LibUtilities/TimeIntegration/TimeIntegrationScheme.h>
 #include <boost/core/ignore_unused.hpp>
 
-#include "H3LAPDSystem.h"
+#include "H3LAPDSystem.hpp"
 
 namespace Nektar {
 std::string H3LAPDSystem::className =
@@ -125,6 +125,20 @@ void H3LAPDSystem::AddCollisionTerms(
 
   // Add collision term to Gd rhs
   Vmath::Vadd(npts, outarray[Gd_idx], 1, collisionTerm, 1, outarray[Gd_idx], 1);
+}
+
+void H3LAPDSystem::AddDensitySource(
+    Array<OneD, Array<OneD, NekDouble>> &outarray) {
+
+  int ne_idx = m_field_to_index.get_idx("ne");
+  int nPts = GetNpoints();
+  Array<OneD, NekDouble> tmpx(nPts), tmpy(nPts), tmpz(nPts);
+  m_fields[ne_idx]->GetCoords(tmpx, tmpy, tmpz);
+  Array<OneD, NekDouble> dens_src(nPts, 0.0);
+  LibUtilities::EquationSharedPtr dens_src_func =
+      m_session->GetFunction("dens_src", ne_idx);
+  dens_src_func->Evaluate(tmpx, tmpy, tmpz, dens_src);
+  Vmath::Vadd(nPts, outarray[ne_idx], 1, dens_src, 1, outarray[ne_idx], 1);
 }
 
 void H3LAPDSystem::AddEParTerms(
@@ -239,19 +253,33 @@ void H3LAPDSystem::CalcEAndAdvVels(
   // v_par,d = Gd / max(ne,n_floor) / md   (N.B. ne === nd)
   int Gd_idx = m_field_to_index.get_idx("Gd");
   int ne_idx = m_field_to_index.get_idx("ne");
-  for (auto ii = 0; ii < nPts; ii++) {
-    m_vParIons[ii] = inarray[Gd_idx][ii] /
-                     std::max(inarray[ne_idx][ii], m_nRef * m_n_floor_fac);
+  // If we're evolving ion momentum, use it to set the ion parallel velocity.
+  // Otherwise zero the array
+  int Gd_idx = m_field_to_index.get_idx("Gd");
+  if (Gd_idx >= 0) {
+    // v_par,d = Gd / max(ne,n_floor) / md   (N.B. ne === nd)
+    for (auto ii = 0; ii < nPts; ii++) {
+      m_vParIons[ii] = inarray[Gd_idx][ii] /
+                       std::max(inarray[ne_idx][ii], m_nRef * m_n_floor_fac);
+    }
+    Vmath::Smul(nPts, 1.0 / m_md, m_vParIons, 1, m_vParIons, 1);
+  } else {
+    Vmath::Zero(nPts, m_vParIons, 1);
   }
-  Vmath::Smul(nPts, 1.0 / m_md, m_vParIons, 1, m_vParIons, 1);
 
-  // v_par,e = Ge / max(ne,n_floor) / me
-  int Ge_idx = m_field_to_index.get_idx("Ge");
-  for (auto ii = 0; ii < nPts; ii++) {
-    m_vParElec[ii] = inarray[Ge_idx][ii] /
-                     std::max(inarray[ne_idx][ii], m_nRef * m_n_floor_fac);
+  // If we're evolving electron momentum, use it to set the electron parallel
+  // velocity. Otherwise zero the array
+  if (Gd_idx >= 0) {
+    // v_par,e = Ge / max(ne,n_floor) / me
+    int Ge_idx = m_field_to_index.get_idx("Ge");
+    for (auto ii = 0; ii < nPts; ii++) {
+      m_vParElec[ii] = inarray[Ge_idx][ii] /
+                       std::max(inarray[ne_idx][ii], m_nRef * m_n_floor_fac);
+    }
+    Vmath::Smul(nPts, 1.0 / m_me, m_vParElec, 1, m_vParElec, 1);
+  } else {
+    Vmath::Zero(nPts, m_vParElec, 1);
   }
-  Vmath::Smul(nPts, 1.0 / m_me, m_vParElec, 1, m_vParElec, 1);
 
   /*
   Store difference in parallel velocities in m_vAdvDiffPar
@@ -344,16 +372,8 @@ void H3LAPDSystem::ExplicitTimeInt(
     AddAdvTerms({"ne"}, m_advPD, m_vAdvDiffPar, inarray, outarray, time, {"w"});
   }
 
-  // Add density source term
-  int ne_idx = m_field_to_index.get_idx("ne");
-  int nPts = GetNpoints();
-  Array<OneD, NekDouble> tmpx(nPts), tmpy(nPts), tmpz(nPts);
-  m_fields[ne_idx]->GetCoords(tmpx, tmpy, tmpz);
-  Array<OneD, NekDouble> dens_src(nPts, 0.0);
-  LibUtilities::EquationSharedPtr dens_src_func =
-      m_session->GetFunction("dens_src", ne_idx);
-  dens_src_func->Evaluate(tmpx, tmpy, tmpz, dens_src);
-  Vmath::Vadd(nPts, outarray[ne_idx], 1, dens_src, 1, outarray[ne_idx], 1);
+  // Add density source via xml-defined function
+  AddDensitySource(outarray);
 }
 
 void GetFluxVector(const Array<OneD, Array<OneD, NekDouble>> &physfield,
@@ -499,17 +519,11 @@ void H3LAPDSystem::LoadParams() {
   m_session->LoadParameter("d11", m_d11, 1);
   m_session->LoadParameter("d22", m_d22, 1);
 
-  // Density independent part of the coulomb logarithm
-  m_session->LoadParameter("logLambda_const", m_coulomb_log_const);
-
   // Factor to set density floor; default to 1e-5 (Hermes-3 default)
   m_session->LoadParameter("n_floor_fac", m_n_floor_fac, 1e-5);
 
-  // Pre-factor used when calculating collision frequencies; read from config
-  m_session->LoadParameter("nu_ei_const", m_nu_ei_const);
-
   // Factor to convert densities back to SI; used in the Coulomb logarithm calc
-  m_session->LoadParameter("ns", m_n_to_SI);
+  m_session->LoadParameter("ns", m_n_to_SI, 1.0);
 
   // Charge
   m_session->LoadParameter("e", m_charge_e, 1.0);
@@ -540,6 +554,16 @@ void H3LAPDSystem::LoadParams() {
   for (auto &term_name : term_names) {
     std::string param_name = "disable_" + term_name;
     m_disabled[term_name] = m_session->DefinesParameter(param_name);
+  }
+
+  // Don't try to read no-default params for eqn sys types that don't use them
+  std::string eq_sys_name = m_session->GetSolverInfo("EQTYPE");
+  if (eq_sys_name != "HWLAPD") {
+    // Density independent part of the coulomb logarithm
+    m_session->LoadParameter("logLambda_const", m_coulomb_log_const);
+
+    // Pre-factor used when calculating collision frequencies; read from config
+    m_session->LoadParameter("nu_ei_const", m_nu_ei_const);
   }
 }
 

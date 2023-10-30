@@ -39,7 +39,7 @@
 #include <LibUtilities/TimeIntegration/TimeIntegrationScheme.h>
 #include <boost/core/ignore_unused.hpp>
 
-#include "HWSystem.h"
+#include "HWSystem.hpp"
 
 namespace Nektar {
 std::string HWSystem::className =
@@ -81,13 +81,11 @@ void HWSystem::ExplicitTimeInt(
   // Get field indices
   int nPts = GetNpoints();
   int ne_idx = m_field_to_index.get_idx("ne");
-  int Ge_idx = m_field_to_index.get_idx("Ge");
-  int Gd_idx = m_field_to_index.get_idx("Gd");
   int phi_idx = m_field_to_index.get_idx("phi");
   int w_idx = m_field_to_index.get_idx("w");
 
-  // Advect both ne and w using ExB velocity
-  AddAdvTerms({"ne"}, m_advElec, m_vExB, inarray, outarray, time);
+  // Advect ne and w (m_vAdvElec === m_vExB for HW)
+  AddAdvTerms({"ne"}, m_advElec, m_vAdvElec, inarray, outarray, time);
   AddAdvTerms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
 
   // Add \alpha*(\phi-n_e) to RHS
@@ -122,10 +120,10 @@ void HWSystem::LoadParams() {
   H3LAPDSystem::LoadParams();
 
   // alpha
-  m_session->LoadParameter("alpha", m_alpha, 2);
+  m_session->LoadParameter("HW_alpha", m_alpha, 2);
 
   // kappa
-  m_session->LoadParameter("kappa", m_kappa, 1);
+  m_session->LoadParameter("HW_kappa", m_kappa, 1);
 }
 
 } // namespace Nektar
