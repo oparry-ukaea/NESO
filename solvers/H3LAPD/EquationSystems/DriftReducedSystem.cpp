@@ -14,6 +14,8 @@ DriftReducedSystem::DriftReducedSystem(
       m_ExB_vel(graph->GetSpaceDimension()), m_E(graph->GetSpaceDimension()) {
   // Construct particle system
   m_particle_sys = std::make_shared<NeutralParticleSystem>(session, graph);
+  m_required_flds = {"ne", "w", "phi"};
+  m_int_fld_names = {"ne", "w"};
 }
 
 /**
@@ -164,6 +166,21 @@ void DriftReducedSystem::calc_E_and_adv_vels(
                  -m_B[2] / m_Bmag / m_Bmag, m_E[0], 1, m_ExB_vel[1], 1);
   Vmath::Svtsvtp(npts, m_B[1] / m_Bmag / m_Bmag, m_E[0], 1,
                  -m_B[0] / m_Bmag / m_Bmag, m_E[1], 1, m_ExB_vel[2], 1);
+
+  // Optionally override vExB with functions
+  std::vector<std::string> vel_ExB_funcs = {"vExB0", "vExB1", "vExB2"};
+  if (m_session->DefinesFunction(vel_ExB_funcs[0]) ||
+      m_session->DefinesFunction(vel_ExB_funcs[1]) ||
+      m_session->DefinesFunction(vel_ExB_funcs[2])) {
+    Array<OneD, NekDouble> tmpx(npts), tmpy(npts), tmpz(npts);
+    m_fields[phi_idx]->GetCoords(tmpx, tmpy, tmpz);
+    for (auto idx = 0; idx < vel_ExB_funcs.size(); idx++) {
+      Array<OneD, NekDouble> tmpv(npts);
+      LibUtilities::EquationSharedPtr func =
+          m_session->GetFunction(vel_ExB_funcs[idx], phi_idx);
+      func->Evaluate(tmpx, tmpy, tmpz, m_ExB_vel[idx]);
+    }
+  }
 }
 
 /**
@@ -189,6 +206,8 @@ void DriftReducedSystem::do_ode_projection(
   for (int i = 0; i < num_vars; ++i) {
     Vmath::Vcopy(npoints, in_arr[i], 1, out_arr[i], 1);
   }
+
+  set_user_def_BCs(out_arr, time);
 }
 
 /**
@@ -325,6 +344,16 @@ void DriftReducedSystem::load_params() {
   m_session->LoadParameter("particle_num_write_particle_steps",
                            m_num_write_particle_steps, 0);
   m_part_timestep = m_timestep / m_num_part_substeps;
+
+  // Generate map that allows easy disabling of terms
+  std::vector<std::string> term_names = {
+      "collisions",    "elec_advection",     "EPar",          "gradP",
+      "ion_advection", "polarisation_drift", "vort_advection"};
+  m_disabled = std::map<std::string, bool>();
+  for (auto &term_name : term_names) {
+    std::string param_name = "disable_" + term_name;
+    m_disabled[term_name] = m_session->DefinesParameter(param_name);
+  }
 }
 
 /**
@@ -341,6 +370,25 @@ void DriftReducedSystem::print_arr_size(const Array<OneD, NekDouble> &arr,
       std::cout << label << " ";
     }
     std::cout << "size = " << arr.size() << std::endl;
+  }
+}
+
+void DriftReducedSystem::set_user_def_BCs(
+    Array<OneD, Array<OneD, NekDouble>> &phys_arr, NekDouble time) {
+  int n_trace_pts = GetTraceTotPoints();
+  int n_vars = phys_arr.size();
+
+  Array<OneD, Array<OneD, NekDouble>> fwd(n_vars);
+  for (int i = 0; i < n_vars; ++i) {
+    fwd[i] = Array<OneD, NekDouble>(n_trace_pts);
+    m_fields[i]->ExtractTracePhys(phys_arr[i], fwd[i]);
+  }
+
+  if (m_custom_BCs.size()) {
+    // Loop over user-defined boundary conditions
+    for (auto &x : m_custom_BCs) {
+      x->Apply(fwd, phys_arr, time);
+    }
   }
 }
 
@@ -531,6 +579,26 @@ void DriftReducedSystem::v_InitObject(bool create_field) {
   ASSERTL0(m_explicitAdvection,
            "This solver only supports explicit-in-time advection.");
 
+  // Set up user-defined boundary conditions, if any were specified
+  for (int ifld = 0; ifld < m_fields.size(); ifld++) {
+    int cnt = 0;
+    for (int icnd = 0; icnd < m_fields[ifld]->GetBndConditions().size();
+         ++icnd) {
+      BoundaryConditionShPtr cnd = m_fields[ifld]->GetBndConditions()[icnd];
+      if (cnd->GetBoundaryConditionType() != SpatialDomains::ePeriodic) {
+        std::string type = cnd->GetUserDefined();
+        if (!type.empty()) {
+          CustomBCsSharedPtr BCs_instance =
+              GetCustomBCsFactory().CreateInstance(type, m_session, m_fields,
+                                                   m_traceNormals, ifld,
+                                                   m_spacedim, icnd, cnt, cnd);
+          m_custom_BCs.push_back(BCs_instance);
+        }
+        cnt += m_fields[ifld]->GetBndCondExpansions()[icnd]->GetExpSize();
+      }
+    }
+  }
+
   // Store DisContFieldSharedPtr casts of fields in a map, indexed by name, for
   // use in particle project,evaluate operations
   int idx = 0;
@@ -553,10 +621,10 @@ void DriftReducedSystem::v_InitObject(bool create_field) {
     } else {
       m_particle_sys->setup_project(m_discont_fields["ne_src"]);
     }
-  }
 
-  // Set up object to evaluate density field
-  m_particle_sys->setup_evaluate_ne(m_discont_fields["ne"]);
+    // Set up object to evaluate density field
+    m_particle_sys->setup_evaluate_ne(m_discont_fields["ne"]);
+  }
 }
 
 /**

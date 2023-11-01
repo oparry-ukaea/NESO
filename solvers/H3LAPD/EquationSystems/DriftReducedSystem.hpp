@@ -3,8 +3,8 @@
 
 #include "../ParticleSystems/NeutralParticleSystem.hpp"
 
+#include "BoundaryConditions/CustomBCs.h"
 #include "nektar_interface/utilities.hpp"
-
 #include <LibUtilities/Memory/NekMemoryManager.hpp>
 #include <SolverUtils/AdvectionSystem.h>
 #include <SolverUtils/EquationSystem.h>
@@ -53,6 +53,8 @@ protected:
   NekDouble m_Bmag;
   /// Normalised magnetic field vector
   std::vector<NekDouble> m_b_unit;
+  /// Map to allow terms to be disabled
+  std::map<std::string, bool> m_disabled;
   /** Source fields cast to DisContFieldSharedPtr, indexed by name, for use in
    * particle evaluation/projection methods
    */
@@ -111,6 +113,8 @@ protected:
   get_phi_solve_rhs(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
                     Array<OneD, NekDouble> &rhs) = 0;
   virtual void load_params();
+  void set_user_def_BCs(Array<OneD, Array<OneD, NekDouble>> &phys_arr,
+                        NekDouble time);
   void solve_phi(const Array<OneD, const Array<OneD, NekDouble>> &in_arr);
 
   virtual void v_InitObject(bool DeclareField) override;
@@ -128,6 +132,8 @@ protected:
                       bool all_tasks = false);
 
 private:
+  /// User defined boundary conditions
+  std::vector<CustomBCsSharedPtr> m_custom_BCs;
   /// d00 coefficient for Helmsolve
   NekDouble m_d00;
   /// d11 coefficient for Helmsolve
@@ -166,6 +172,18 @@ private:
   void
   get_flux_vector_vort(const Array<OneD, Array<OneD, NekDouble>> &fields_vals,
                        Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
+
+  /**
+   * @brief Variadic template for flexible printing
+   */
+  void print_rank_zero() { std::cout << std::endl; }
+  template <typename T, typename... Args>
+  void print_rank_zero(T t, Args... args) {
+    if (m_session->GetComm()->TreatAsRankZero()) {
+      std::cout << t;
+      print_rank_zero(args...);
+    }
+  }
 
   void validate_fields();
 };

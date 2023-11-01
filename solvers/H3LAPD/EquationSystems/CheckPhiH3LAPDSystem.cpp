@@ -16,7 +16,9 @@ CheckPhiH3LAPDSystem::CheckPhiH3LAPDSystem(
     const SD::MeshGraphSharedPtr &graph)
     : UnsteadySystem(session, graph), AdvectionSystem(session, graph),
       DriftReducedSystem(session, graph) {
-  m_required_flds = {"ne", "w", "phi"};
+  // m_required_flds = {"ne", "w", "phi"};
+  m_required_flds = {"ne", "Ge", "Gd", "w", "phi", "phi_sln", "phi_diff"};
+  m_int_fld_names = {"ne", "w"};
 }
 
 void CheckPhiH3LAPDSystem::explicit_time_int(

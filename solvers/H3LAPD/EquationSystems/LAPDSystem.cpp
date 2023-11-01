@@ -217,19 +217,31 @@ void LAPDSystem::explicit_time_int(
   calc_E_and_adv_vels(in_arr);
 
   // Add advection terms to out_arr, handling (ne, Ge), Gd and w separately
-  add_adv_terms({"ne", "Ge"}, m_adv_elec, m_adv_vel_elec, in_arr, out_arr,
-                time);
-  add_adv_terms({"Gd"}, m_adv_ions, m_adv_vel_ions, in_arr, out_arr, time);
-  add_adv_terms({"w"}, m_adv_vort, m_ExB_vel, in_arr, out_arr, time);
+  if (!m_disabled["elec_advection"]) {
+    add_adv_terms({"ne", "Ge"}, m_adv_elec, m_adv_vel_elec, in_arr, out_arr,
+                  time);
+  }
+  if (!m_disabled["ion_advection"]) {
+    add_adv_terms({"Gd"}, m_adv_ions, m_adv_vel_ions, in_arr, out_arr, time);
+  }
+  if (!m_disabled["vort_advection"]) {
+    add_adv_terms({"w"}, m_adv_vort, m_ExB_vel, in_arr, out_arr, time);
+  }
+  if (!m_disabled["gradP"]) {
+    add_grad_P_terms(in_arr, out_arr);
+  }
+  if (!m_disabled["EPar"]) {
+    add_E_par_terms(in_arr, out_arr);
+  }
+  if (!m_disabled["collisions"]) {
+    // Add collision terms to RHS of Ge, Gd eqns
+    add_collision_terms(in_arr, out_arr);
+  }
 
-  add_grad_P_terms(in_arr, out_arr);
-
-  add_E_par_terms(in_arr, out_arr);
-
-  // Add collision terms to RHS of Ge, Gd eqns
-  add_collision_terms(in_arr, out_arr);
-  // Add polarisation drift term to vorticity eqn RHS
-  add_adv_terms({"ne"}, m_adv_PD, m_adv_vel_PD, in_arr, out_arr, time, {"w"});
+  if (!m_disabled["polarisation_drift"]) {
+    // Add polarisation drift term to vorticity eqn RHS
+    add_adv_terms({"ne"}, m_adv_PD, m_adv_vel_PD, in_arr, out_arr, time, {"w"});
+  }
 
   // Add density source via xml-defined function
   add_density_source(out_arr);
