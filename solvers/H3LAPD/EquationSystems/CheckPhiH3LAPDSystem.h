@@ -31,8 +31,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef CheckPhiH3LAPDSystem_H
-#define CheckPhiH3LAPDSystem_H
+#ifndef H3LAPD_CHECK_PHI_SYSTEM_H
+#define H3LAPD_CHECK_PHI_SYSTEM_H
 
 #include "nektar_interface/utilities.hpp"
 
@@ -42,39 +42,47 @@
 #include <SolverUtils/Forcing/Forcing.h>
 #include <SolverUtils/RiemannSolvers/RiemannSolver.h>
 
-#include "H3LAPDSystem.h"
+#include "DriftReducedSystem.hpp"
 
-namespace Nektar {
+namespace LU = Nektar::LibUtilities;
+namespace MR = Nektar::MultiRegions;
+namespace SD = Nektar::SpatialDomains;
+namespace SU = Nektar::SolverUtils;
+namespace NESO::Solvers::H3LAPD {
 
-class CheckPhiH3LAPDSystem : virtual public H3LAPDSystem {
+class CheckPhiH3LAPDSystem : virtual public DriftReducedSystem {
 public:
   friend class MemoryManager<CheckPhiH3LAPDSystem>;
 
-  /// Name of class.
-  static std::string className;
-
   /// Creates an instance of this class.
-  static SolverUtils::EquationSystemSharedPtr
-  create(const LibUtilities::SessionReaderSharedPtr &pSession,
-         const SpatialDomains::MeshGraphSharedPtr &pGraph) {
-    SolverUtils::EquationSystemSharedPtr p =
+  static SU::EquationSystemSharedPtr
+  create(const LU::SessionReaderSharedPtr &pSession,
+         const SD::MeshGraphSharedPtr &pGraph) {
+    SU::EquationSystemSharedPtr p =
         MemoryManager<CheckPhiH3LAPDSystem>::AllocateSharedPtr(pSession,
                                                                pGraph);
     p->InitObject();
     return p;
   }
 
+  /// Name of class
+  static std::string class_name;
+
 protected:
-  CheckPhiH3LAPDSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
-                       const SpatialDomains::MeshGraphSharedPtr &pGraph);
+  CheckPhiH3LAPDSystem(const LU::SessionReaderSharedPtr &session,
+                       const SD::MeshGraphSharedPtr &graph);
 
-  void ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                       Array<OneD, Array<OneD, NekDouble>> &outarray,
-                       const NekDouble time) override;
+  void
+  explicit_time_int(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+                    Array<OneD, Array<OneD, NekDouble>> &out_arr,
+                    const NekDouble time) override;
 
-  void GetPhiSolveRHS(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                      Array<OneD, NekDouble> &rhs) override;
+  void
+  get_phi_solve_rhs(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+                    Array<OneD, NekDouble> &rhs) override;
+
+  void v_InitObject(bool declare_field) override;
 };
 
-} // namespace Nektar
+} // namespace NESO::Solvers::H3LAPD
 #endif
