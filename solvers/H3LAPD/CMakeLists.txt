@@ -5,6 +5,7 @@ set(H3LAPD_SRC_FILES
     EquationSystems/H3LAPDSystem.cpp
     EquationSystems/CheckPhiH3LAPDSystem.cpp
     EquationSystems/HWSystem.cpp
+    EquationSystems/Outflow1DSystem.cpp
     EquationSystems/ReducedH3LAPDSystem.cpp
     Forcing/H3LAPDSources.cpp
     H3LAPD.cpp)
