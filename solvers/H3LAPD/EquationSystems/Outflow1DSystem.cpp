@@ -1,60 +1,24 @@
-///////////////////////////////////////////////////////////////////////////////
-//
-// File Outflow1DSystem.cpp
-//
-// For more information, please see: http://www.nektar.info
-//
-// The MIT License
-//
-// Copyright (c) 2006 Division of Applied Mathematics, Brown University (USA),
-// Department of Aeronautics, Imperial College London (UK), and Scientific
-// Computing and Imaging Institute, University of Utah (USA).
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-// DEALINGS IN THE SOFTWARE.
-//
-// Description: 2D Hasegawa-Waketani equation system as an intermediate step
-// towards the full H3-LAPD problem.  Implemented by Ed Threlfall in August 2023
-// after realizing he didn't know how to do numerical flux terms in 3D
-// Hasegawa-Wakatani. Parameter choices are same as in Nektar-Driftwave 2D
-// proxyapp. Evolves ne, w, phi only, no momenta, no ions
-//
-///////////////////////////////////////////////////////////////////////////////
 #include <LibUtilities/BasicUtils/Vmath.hpp>
 #include <LibUtilities/TimeIntegration/TimeIntegrationScheme.h>
 #include <boost/core/ignore_unused.hpp>
 
 #include "Outflow1DSystem.h"
 
-namespace Nektar {
+namespace NESO::Solvers::H3LAPD {
 std::string Outflow1DSystem::className =
     SolverUtils::GetEquationSystemFactory().RegisterCreatorFunction(
         "Outflow1D", Outflow1DSystem::create, "Simple 1D outflow problem");
 
 Outflow1DSystem::Outflow1DSystem(
-    const LibUtilities::SessionReaderSharedPtr &pSession,
-    const SpatialDomains::MeshGraphSharedPtr &pGraph)
-    : UnsteadySystem(pSession, pGraph), AdvectionSystem(pSession, pGraph),
-      H3LAPDSystem(pSession, pGraph) {
+    const LibUtilities::SessionReaderSharedPtr &session,
+    const SpatialDomains::MeshGraphSharedPtr &graph)
+    : UnsteadySystem(session, graph), AdvectionSystem(session, graph),
+      DriftReducedSystem(session, graph) {
   m_required_flds = {"ne", "Ge"};
+  m_int_fld_names = {"ne", "Ge"};
 }
 
-void Outflow1DSystem::ExplicitTimeInt(
+void Outflow1DSystem::explicit_time_int(
     const Array<OneD, const Array<OneD, NekDouble>> &inarray,
     Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
 
@@ -69,7 +33,7 @@ void Outflow1DSystem::ExplicitTimeInt(
     }
   }
 
-  ZeroOutArray(outarray);
+  zero_out_array(outarray);
 
   // Compute ve from Ge
 
@@ -79,20 +43,19 @@ void Outflow1DSystem::ExplicitTimeInt(
   int Ge_idx = m_field_to_index.get_idx("Ge");
 
   // v_par,e = Ge / max(ne,n_floor) / me
-  int Ge_idx = m_field_to_index.get_idx("Ge");
   for (auto idim = 0; idim < m_graph->GetSpaceDimension(); idim++) {
     for (auto ii = 0; ii < nPts; ii++) {
-      m_advElec[idim][ii] =
+      m_adv_vel_elec[idim][ii] =
           inarray[Ge_idx][ii] /
-          std::max(inarray[ne_idx][ii], m_nRef * m_n_floor_fac);
+          std::max(inarray[ne_idx][ii], m_n_ref * m_n_floor_fac);
     }
   }
 
-  AddAdvTerms({"ne"}, m_advElec, m_vExB, inarray, outarray, time);
+  add_adv_terms({"ne"}, m_adv_elec, m_ExB_vel, inarray, outarray, time);
 
   // // Advect both ne and w using ExB velocity
-  // AddAdvTerms({"ne"}, m_advElec, m_vExB, inarray, outarray, time);
-  // AddAdvTerms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
+  // add_adv_terms({"ne"}, m_advElec, m_vExB, inarray, outarray, time);
+  // add_adv_terms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
 
   // // Add \alpha*(\phi-n_e) to RHS
   // Array<OneD, NekDouble> HWterm_2D_alpha(nPts);
@@ -113,14 +76,34 @@ void Outflow1DSystem::ExplicitTimeInt(
   //             1);
 }
 
-void Outflow1DSystem::LoadParams() {
-  H3LAPDSystem::LoadParams();
+void Outflow1DSystem::load_params() {
+  DriftReducedSystem::load_params();
 
-  // // c
-  // m_session->LoadParameter("c", m_c);
+  // c
+  m_session->LoadParameter("c", m_c);
 
-  // // R
-  // m_session->LoadParameter("R", m_R);
+  // nstar
+  m_session->LoadParameter("n_star", m_nstar);
+
+  // T
+  m_session->LoadParameter("T", m_T);
 }
 
-} // namespace Nektar
+// dummy
+void Outflow1DSystem::get_phi_solve_rhs(
+    const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+    Array<OneD, NekDouble> &rhs) {
+  // Do nothing
+}
+
+/**
+ * @brief Post-construction class-initialisation.
+ */
+void Outflow1DSystem::v_InitObject(bool declare_field) {
+  DriftReducedSystem::v_InitObject(declare_field);
+
+  // Bind RHS function for time integration object
+  m_ode.DefineOdeRhs(&Outflow1DSystem::explicit_time_int, this);
+}
+
+} // namespace NESO::Solvers::H3LAPD

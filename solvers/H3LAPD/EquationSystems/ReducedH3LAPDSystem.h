@@ -1,40 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-//
-// File ReducedH3LAPDSystem.h
-//
-// For more information, please see: http://www.nektar.info
-//
-// The MIT License
-//
-// Copyright (c) 2006 Division of Applied Mathematics, Brown University (USA),
-// Department of Aeronautics, Imperial College London (UK), and Scientific
-// Computing and Imaging Institute, University of Utah (USA).
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-// DEALINGS IN THE SOFTWARE.
-//
-// Description: Header for a reduced version of the Hermes-3 LAPD equation
-// system
-//
-///////////////////////////////////////////////////////////////////////////////
-
-#ifndef ReducedH3LAPDSystem_H
-#define ReducedH3LAPDSystem_H
+#ifndef H3LAPD_REDUCED_SYSTEM_H
+#define H3LAPD_REDUCED_SYSTEM_H
 
 #include "nektar_interface/utilities.hpp"
 
@@ -44,43 +9,56 @@
 #include <SolverUtils/Forcing/Forcing.h>
 #include <SolverUtils/RiemannSolvers/RiemannSolver.h>
 
-#include "H3LAPDSystem.h"
+#include "DriftReducedSystem.hpp"
 
-namespace Nektar {
+namespace LU = Nektar::LibUtilities;
+namespace MR = Nektar::MultiRegions;
+namespace SD = Nektar::SpatialDomains;
+namespace SU = Nektar::SolverUtils;
+namespace NESO::Solvers::H3LAPD {
 
-class ReducedH3LAPDSystem : virtual public H3LAPDSystem {
+/**
+ * @brief Reduced version of the Hermes-3 LAPD equation system
+ */
+class ReducedH3LAPDSystem : virtual public DriftReducedSystem {
 public:
   friend class MemoryManager<ReducedH3LAPDSystem>;
 
-  /// Name of class.
-  static std::string className;
-
   /// Creates an instance of this class.
-  static SolverUtils::EquationSystemSharedPtr
-  create(const LibUtilities::SessionReaderSharedPtr &pSession,
-         const SpatialDomains::MeshGraphSharedPtr &pGraph) {
-    SolverUtils::EquationSystemSharedPtr p =
-        MemoryManager<ReducedH3LAPDSystem>::AllocateSharedPtr(pSession, pGraph);
+  static SU::EquationSystemSharedPtr
+  create(const LU::SessionReaderSharedPtr &session,
+         const SD::MeshGraphSharedPtr &graph) {
+    SU::EquationSystemSharedPtr p =
+        MemoryManager<ReducedH3LAPDSystem>::AllocateSharedPtr(session, graph);
     p->InitObject();
     return p;
   }
 
+  /// Name of class
+  static std::string class_name;
+
 protected:
-  ReducedH3LAPDSystem(const LibUtilities::SessionReaderSharedPtr &pSession,
-                      const SpatialDomains::MeshGraphSharedPtr &pGraph);
+  ReducedH3LAPDSystem(const LU::SessionReaderSharedPtr &session,
+                      const SD::MeshGraphSharedPtr &graph);
 
-  void AddDivvParTerm(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                      Array<OneD, Array<OneD, NekDouble>> &outarray);
+  void
+  add_div_vpar_term(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+                    Array<OneD, Array<OneD, NekDouble>> &out_arr);
 
-  void CalcEAndAdvVels(
-      const Array<OneD, const Array<OneD, NekDouble>> &inarray) override;
+  void calc_E_and_adv_vels(
+      const Array<OneD, const Array<OneD, NekDouble>> &in_arr) override;
 
-  void ExplicitTimeInt(const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-                       Array<OneD, Array<OneD, NekDouble>> &outarray,
-                       const NekDouble time) override;
+  void
+  explicit_time_int(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+                    Array<OneD, Array<OneD, NekDouble>> &out_arr,
+                    const NekDouble time) override;
 
-  void LoadParams() override;
+  void
+  get_phi_solve_rhs(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+                    Array<OneD, NekDouble> &rhs) override;
+
+  void v_InitObject(bool declare_field) override;
 };
 
-} // namespace Nektar
+} // namespace NESO::Solvers::H3LAPD
 #endif
