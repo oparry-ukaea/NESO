@@ -36,18 +36,18 @@
 
 #include "SheathBCs.h"
 
-namespace Nektar {
+namespace NESO::Solvers::H3LAPD {
 
 std::string SheathBCs::className =
     GetCustomBCsFactory().RegisterCreatorFunction(
         "Sheath", SheathBCs::create, "SheathBCs for the H3LAPD solver.");
 
-SheathBCs::SheathBCs(const LibUtilities::SessionReaderSharedPtr &pSession,
-                     const Array<OneD, MultiRegions::ExpListSharedPtr> &pFields,
+SheathBCs::SheathBCs(const LU::SessionReaderSharedPtr &pSession,
+                     const Array<OneD, MR::ExpListSharedPtr> &pFields,
                      const Array<OneD, Array<OneD, NekDouble>> &pTraceNormals,
                      const int field_idx, const int pSpaceDim,
                      const int bcRegion, const int cnt,
-                     SpatialDomains::BoundaryConditionShPtr cnd)
+                     SD::BoundaryConditionShPtr cnd)
     : CustomBCs(pSession, pFields, pTraceNormals, field_idx, pSpaceDim,
                 bcRegion, cnt, cnd),
       m_mom_idx(field_idx) {
@@ -68,7 +68,7 @@ void SheathBCs::v_Apply(Array<OneD, Array<OneD, NekDouble>> &Fwd,
   auto explists = m_fields[m_dens_idx]->GetBndCondExpansions()[m_bcRegion];
   for (int e = 0; e < explists->GetExpSize(); ++e) {
     // Current explist
-    LocalRegions::ExpansionSharedPtr explist = explists->GetExp(e);
+    LR::ExpansionSharedPtr explist = explists->GetExp(e);
     // Offset in the field arrays for this explist
     int explist_offset = explists->GetPhys_Offset(e);
     // Offset in the trace map for this explist
@@ -93,4 +93,4 @@ void SheathBCs::v_Apply(Array<OneD, Array<OneD, NekDouble>> &Fwd,
     }
   }
 }
-} // namespace Nektar
+} // namespace NESO::Solvers::H3LAPD

@@ -43,7 +43,12 @@
 #include <SpatialDomains/Conditions.h>
 #include <string>
 
-namespace Nektar {
+namespace LR = Nektar::LocalRegions;
+namespace LU = Nektar::LibUtilities;
+namespace MR = Nektar::MultiRegions;
+namespace SD = Nektar::SpatialDomains;
+
+namespace NESO::Solvers::H3LAPD {
 //  Forward declaration
 class CustomBCs;
 
@@ -51,11 +56,11 @@ class CustomBCs;
 typedef std::shared_ptr<CustomBCs> CustomBCsSharedPtr;
 
 /// Declaration of the boundary condition factory
-typedef LibUtilities::NekFactory<
-    std::string, CustomBCs, const LibUtilities::SessionReaderSharedPtr &,
-    const Array<OneD, MultiRegions::ExpListSharedPtr> &,
+typedef LU::NekFactory<
+    std::string, CustomBCs, const LU::SessionReaderSharedPtr &,
+    const Array<OneD, MR::ExpListSharedPtr> &,
     const Array<OneD, Array<OneD, NekDouble>> &, const int, const int,
-    const int, const int, SpatialDomains::BoundaryConditionShPtr>
+    const int, const int, SD::BoundaryConditionShPtr>
     CustomBCsFactory;
 
 /// Declaration of the boundary condition factory singleton
@@ -78,9 +83,9 @@ public:
 
 protected:
   /// Session reader
-  LibUtilities::SessionReaderSharedPtr m_session;
+  LU::SessionReaderSharedPtr m_session;
   /// Array of fields
-  Array<OneD, MultiRegions::ExpListSharedPtr> m_fields;
+  Array<OneD, MR::ExpListSharedPtr> m_fields;
   /// Trace normals
   Array<OneD, Array<OneD, NekDouble>> m_traceNormals;
   // Field name => index mapper
@@ -95,16 +100,16 @@ protected:
   NekDouble m_weight;
 
   // Nektar BC ptr
-  SpatialDomains::BoundaryConditionShPtr m_cnd;
+  SD::BoundaryConditionShPtr m_cnd;
 
   /// Constructor
-  CustomBCs(const LibUtilities::SessionReaderSharedPtr &pSession,
-            const Array<OneD, MultiRegions::ExpListSharedPtr> &pFields,
+  CustomBCs(const LU::SessionReaderSharedPtr &pSession,
+            const Array<OneD, MR::ExpListSharedPtr> &pFields,
             const Array<OneD, Array<OneD, NekDouble>> &pTraceNormals,
             const int field_idx, const int pSpaceDim, const int bcRegion,
-            const int cnt, SpatialDomains::BoundaryConditionShPtr cnd);
+            const int cnt, SD::BoundaryConditionShPtr cnd);
 
-  void evaluate_expression(LocalRegions::ExpansionSharedPtr explist,
+  void evaluate_expression(LR::ExpansionSharedPtr explist,
                            Array<OneD, NekDouble> result);
 
   virtual void v_Apply(Array<OneD, Array<OneD, NekDouble>> &Fwd,
@@ -113,6 +118,6 @@ protected:
 
   virtual void v_ApplyBwdWeight();
 };
-} // namespace Nektar
+} // namespace NESO::Solvers::H3LAPD
 
 #endif
