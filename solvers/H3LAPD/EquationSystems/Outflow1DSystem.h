@@ -50,6 +50,16 @@ private:
   NekDouble m_c;
   NekDouble m_nstar;
   NekDouble m_T;
+
+  SU::AdvectionSharedPtr m_adv_with_gradP;
+  SU::RiemannSolverSharedPtr m_riemann_gradP;
+
+  void
+  get_gradP_bulk_flux(const Array<OneD, Array<OneD, NekDouble>> &field_vals,
+                      Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
+
+  Array<OneD, NekDouble> &get_adv_vel_norm_gradP();
+  Array<OneD, NekDouble> &get_trace_normal_z();
 };
 
 } // namespace NESO::Solvers::H3LAPD

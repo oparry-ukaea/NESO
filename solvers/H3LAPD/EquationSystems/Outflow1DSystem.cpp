@@ -19,61 +19,43 @@ Outflow1DSystem::Outflow1DSystem(
 }
 
 void Outflow1DSystem::explicit_time_int(
-    const Array<OneD, const Array<OneD, NekDouble>> &inarray,
-    Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
+    const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+    Array<OneD, Array<OneD, NekDouble>> &out_arr, const NekDouble time) {
 
-  // Check inarray for NaNs
+  // Check in_arr for NaNs
   for (auto &var : {"ne", "Ge"}) {
     auto fidx = m_field_to_index.get_idx(var);
-    for (auto ii = 0; ii < inarray[fidx].size(); ii++) {
-      if (!std::isfinite(inarray[fidx][ii])) {
+    for (auto ii = 0; ii < in_arr[fidx].size(); ii++) {
+      if (!std::isfinite(in_arr[fidx][ii])) {
         std::cout << "NaN in field " << var << ", aborting." << std::endl;
         exit(1);
       }
     }
   }
 
-  zero_out_array(outarray);
-
-  // Compute ve from Ge
+  zero_out_array(out_arr);
 
   // Get field indices
   int nPts = GetNpoints();
   int ne_idx = m_field_to_index.get_idx("ne");
   int Ge_idx = m_field_to_index.get_idx("Ge");
 
-  // v_par,e = Ge / max(ne,n_floor) / me
+  // Set advection velocity from parallel momentum and density, accounting for
+  // density floor
   for (auto idim = 0; idim < m_graph->GetSpaceDimension(); idim++) {
     for (auto ii = 0; ii < nPts; ii++) {
       m_adv_vel_elec[idim][ii] =
-          inarray[Ge_idx][ii] /
-          std::max(inarray[ne_idx][ii], m_n_ref * m_n_floor_fac);
+          in_arr[Ge_idx][ii] /
+          std::max(in_arr[ne_idx][ii], m_n_ref * m_n_floor_fac);
     }
   }
 
-  add_adv_terms({"ne"}, m_adv_elec, m_ExB_vel, inarray, outarray, time);
+  // Add advection terms to ne and Ge equations, gradP flux to Ge equation
+  add_adv_terms({"ne", "Ge"}, m_adv_with_gradP, m_adv_vel_elec, in_arr, out_arr,
+                time);
 
-  // // Advect both ne and w using ExB velocity
-  // add_adv_terms({"ne"}, m_advElec, m_vExB, inarray, outarray, time);
-  // add_adv_terms({"w"}, m_advVort, m_vExB, inarray, outarray, time);
-
-  // // Add \alpha*(\phi-n_e) to RHS
-  // Array<OneD, NekDouble> HWterm_2D_alpha(nPts);
-  // Vmath::Vsub(nPts, m_fields[phi_idx]->GetPhys(), 1,
-  //             m_fields[ne_idx]->GetPhys(), 1, HWterm_2D_alpha, 1);
-  // Vmath::Smul(nPts, m_alpha, HWterm_2D_alpha, 1, HWterm_2D_alpha, 1);
-  // Vmath::Vadd(nPts, outarray[w_idx], 1, HWterm_2D_alpha, 1, outarray[w_idx],
-  // 1); Vmath::Vadd(nPts, outarray[ne_idx], 1, HWterm_2D_alpha, 1,
-  // outarray[ne_idx],
-  //             1);
-
-  // // Add \kappa*\dpartial\phi/\dpartial y to RHS
-  // Array<OneD, NekDouble> HWterm_2D_kappa(nPts);
-  // m_fields[phi_idx]->PhysDeriv(1, m_fields[phi_idx]->GetPhys(),
-  //                              HWterm_2D_kappa);
-  // Vmath::Vsub(nPts, outarray[ne_idx], 1, HWterm_2D_kappa, 1,
-  // outarray[ne_idx],
-  //             1);
+  // Add source to ne equation
+  add_density_source(out_arr);
 }
 
 void Outflow1DSystem::load_params() {
@@ -96,6 +78,35 @@ void Outflow1DSystem::get_phi_solve_rhs(
   // Do nothing
 }
 
+void Outflow1DSystem::get_gradP_bulk_flux(
+    const Array<OneD, Array<OneD, NekDouble>> &field_vals,
+    Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux) {
+  NESOASSERT(flux.size() == 2, "Expecting flux array with outer dim size 2");
+  // Add standard bulk flux terms
+  get_flux_vector(field_vals, m_adv_vel_elec, flux);
+
+  // Add ne to
+  int ne_idx = m_field_to_index.get_idx("ne");
+  int Ge_idx = m_field_to_index.get_idx("Ge");
+
+  constexpr int z_dir = 2;
+  for (int i = 0; i < field_vals[0].size(); ++i) {
+    flux[Ge_idx][z_dir][i] += field_vals[ne_idx][i];
+  }
+}
+
+/**
+ * @brief Compute trace-normal advection velocities
+ */
+Array<OneD, NekDouble> &Outflow1DSystem::get_adv_vel_norm_gradP() {
+  Array<OneD, NekDouble> norm_vels(GetTraceNpoints());
+  return get_adv_vel_norm(norm_vels, m_adv_vel_elec);
+}
+
+Array<OneD, NekDouble> &Outflow1DSystem::get_trace_normal_z() {
+  return m_traceNormals[2];
+}
+
 /**
  * @brief Post-construction class-initialisation.
  */
@@ -104,6 +115,26 @@ void Outflow1DSystem::v_InitObject(bool declare_field) {
 
   // Bind RHS function for time integration object
   m_ode.DefineOdeRhs(&Outflow1DSystem::explicit_time_int, this);
+
+  // Setup custom riemann solver and quasi-advection object for pressure
+  // gradient term
+  //
+
+  m_adv_with_gradP =
+      SU::GetAdvectionFactory().CreateInstance(m_adv_type, m_adv_type);
+  // Set callback function to compute bulk flux
+  m_adv_with_gradP->SetFluxVector(&Outflow1DSystem::get_gradP_bulk_flux, this);
+
+  // Create Riemann solver
+  m_riemann_gradP =
+      SU::GetRiemannSolverFactory().CreateInstance("Custom", m_session);
+  m_riemann_gradP->SetScalar("nz", &Outflow1DSystem::get_trace_normal_z, this);
+  m_riemann_gradP->SetScalar("Vn", &Outflow1DSystem::get_adv_vel_norm_gradP,
+                             this);
+
+  // Bind to quasi-advection object
+  m_adv_with_gradP->SetRiemannSolver(m_riemann_gradP);
+  m_adv_with_gradP->InitObject(m_session, m_fields);
 }
 
 } // namespace NESO::Solvers::H3LAPD

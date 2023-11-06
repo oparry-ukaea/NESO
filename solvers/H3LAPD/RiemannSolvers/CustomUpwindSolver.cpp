@@ -52,14 +52,20 @@ void CustomUpwindSolver::v_Solve(const int nDim, const Nek2DArrConstInner &Fwd,
                                  Nek2DArr &flux) {
   boost::ignore_unused(nDim);
 
-  ASSERTL1(CheckScalars("Foo"), "Foo not defined.");
-  const Nek1DArr &foo = m_scalars["Foo"]();
+  ASSERTL1(CheckScalars("Vn"), "Vn not defined.");
+  ASSERTL1(CheckScalars("nz"), "nz not defined.");
 
-  for (int j = 0; j < foo.size(); ++j) {
-    const Nek2DArrConstInner &tmp = foo[j] >= 0 ? Fwd : Bwd;
-    // for (int i = 0; i < Fwd.size(); ++i) {
-    //   flux[i][j] = foo[j] * tmp[i][j];
-    // }
+  const Nek1DArr &traceVel = m_scalars["Vn"]();
+  const Nek1DArr &nz = m_scalars["nz"]();
+
+  for (int j = 0; j < traceVel.size(); ++j) {
+    const Nek2DArrConstInner &tmp = traceVel[j] >= 0 ? Fwd : Bwd;
+    for (int i = 0; i < Fwd.size(); ++i) {
+      flux[i][j] = traceVel[j] * tmp[i][j];
+    }
+
+    // dn/dz term (is from pressure gradient)
+    flux[1][j] += nz[j] * tmp[0][j];
   }
 }
 } // namespace NESO::Solvers::H3LAPD
