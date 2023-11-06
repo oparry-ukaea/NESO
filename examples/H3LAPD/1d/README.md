@@ -63,3 +63,15 @@ compression of the material is less for smaller $\delta$ (i.e. away from the
 sonic case).
 
 This is the explanation of the parameter `delta` in the [session file](outflow1d.xml).
+
+### Running the example
+
+1. Build the H3LAPD solver using spack install (see [top-level readme](../../../README.md)).
+
+1. Generate the mesh with
+
+    `./scripts/geo_to_xml.sh examples/H3LAPD/1d/cuboid.geo`
+
+2. Finally, run the example with
+
+   `./scripts/run_eg.sh H3LAPD 1d` 
