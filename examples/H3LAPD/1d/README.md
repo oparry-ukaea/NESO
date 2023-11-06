@@ -32,7 +32,7 @@ u &= \frac{c - R}{2n^* x},~~~~~~~(2)\\
 \end{aligned}
 $$
 
-where the radical $R=+\sqrt{c^2-4Tn^{*2} x^2}$ and the constant $c=2 n^*\sqrt{T}$ is chosen to give $u=\mp \sqrt{T}$ at the respective boundaries *x* =  − 1 and *x* = 1 (sonic outflow). This condition makes the radical vanish at the boundaries and the density there is $\frac{n^*}{\sqrt{T}}$. Note that it looks a bit like the solution is singular in *u* near *x* = 0 but it’s actually zero there. (Taylor expand radical to see this). Beware of this if trying to initialize the solution in a simulation.
+where the radical $R=+\sqrt{c^2-4Tn^{* 2} x^2}$ and the constant $c=2n^* \sqrt{T}$ is chosen to give $u=\mp \sqrt{T}$ at the respective boundaries *x* =  − 1 and *x* = 1 (sonic outflow). This condition makes the radical vanish at the boundaries and the density there is $\frac{n^*}{\sqrt{T}}$. Note that it looks a bit like the solution is singular in *u* near *x* = 0 but it’s actually zero there. (Taylor expand radical to see this). Beware of this if trying to initialize the solution in a simulation.
 
 Note the other constant of integration that entered when solving the equations was set to zero, which just corresponds to a choice of origin (the equations are translation-invariant). Note the equations could be expressed in $p ≡ nu$ instead of $u$; note the simple result that $p=n^*x$.
 
