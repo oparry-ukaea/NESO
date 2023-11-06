@@ -64,7 +64,9 @@ void Outflow1DSystem::load_params() {
   // No additional params to load
 }
 
-// dummy
+/**
+ * No phi solve for this system - dummy function to keep the compiler happy.
+ */
 void Outflow1DSystem::get_phi_solve_rhs(
     const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
     Array<OneD, NekDouble> &rhs) {
@@ -78,13 +80,16 @@ void Outflow1DSystem::get_gradP_bulk_flux(
   // Add standard bulk flux terms
   get_flux_vector(field_vals, m_adv_vel_elec, flux);
 
-  // Add ne to
+  /* Code to add gradP contribution assumes fields are ne,Ge.
+  Make sure that's the case
+   */
   int ne_idx = m_field_to_index.get_idx("ne");
   int Ge_idx = m_field_to_index.get_idx("Ge");
-
   constexpr int z_dir = 2;
   NESOASSERT(ne_idx == 0 && Ge_idx == 1, "Unexpected indices");
   NESOASSERT(flux[Ge_idx].size() == 3, "Unexpected flux dim");
+
+  // Add gradP term
   for (int i = 0; i < field_vals[ne_idx].size(); ++i) {
     flux[Ge_idx][z_dir][i] += field_vals[ne_idx][i];
   }

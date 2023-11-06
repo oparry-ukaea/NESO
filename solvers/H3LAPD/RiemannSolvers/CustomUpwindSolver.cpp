@@ -35,13 +35,13 @@ CustomUpwindSolver::CustomUpwindSolver(
     : SU::RiemannSolver(session) {}
 
 /**
- * @brief Implementation of the upwind solver.
+ * @brief Customised version of Nektar's upwind  solver.
  *
- * The upwind solver assumes that a scalar field Vn is defined, which
- * corresponds with the dot product \f$\mathbf{V}\cdot\mathbf{n}\f$,
- * where \f$\mathbf{V}\f$ is the advection velocity and \f$\mathbf{n}\f$
- * defines the normal of a vertex, edge or face at each quadrature point
- * of the trace space.
+ * The scalar field Vn corresponds with the dot product
+ * \f$\mathbf{V}\cdot\mathbf{n}\f$, where \f$\mathbf{V}\f$ is the advection
+ * velocity and \f$\mathbf{n}\f$ defines the normal of a vertex, edge or face at
+ * each quadrature point of the trace space.
+ * Scalar field nz is assumed to contain trace normals in the z direction.
  *
  * @param Fwd   Forwards trace space.
  * @param Bwd   Backwards trace space.

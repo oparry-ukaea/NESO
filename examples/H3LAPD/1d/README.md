@@ -63,6 +63,9 @@ compression of the material is less for smaller $\delta$ (i.e. away from the
 sonic case).
 
 This is the explanation of the parameter `delta` in the [session file](outflow1d.xml).
+Note that $x$ in the equations above corresponds to the $z$ coordinate in our 3D domain,
+so expressions for the boundary and initial conditions in the session file are modified
+accordingly.
 
 ### Running the example
 
