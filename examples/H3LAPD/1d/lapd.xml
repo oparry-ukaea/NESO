@@ -31,9 +31,7 @@
             <P> IO_InfoSteps  = NumSteps+1        </P>
             <P> IO_CheckSteps = NumSteps/20       </P>
             <!-- Params for 1D problem -->
-            <P> n_star = 3 </P>
-            <P> T      = 2 </P>
-            <P> c      = 2*n_star*sqrt(T) </P>
+            <P> delta = 0.1 </P>  <!-- parameter of solution: delta = 1 is sonic outflow, delta < 1 is subsonic outflow -->
         </PARAMETERS>
 
         <VARIABLES>
@@ -42,56 +40,35 @@
         </VARIABLES>
 
         <BOUNDARYREGIONS>
-            <B ID="0"> C[1] </B> <!-- Low-x end -->
-            <B ID="1"> C[2] </B> <!-- High-x end -->
-            <B ID="2"> C[3] </B> <!-- Low-y end -->
-            <B ID="3"> C[4] </B> <!-- High-y end -->
-            <B ID="4"> C[5] </B> <!-- Low-z end -->
-            <B ID="5"> C[6] </B> <!-- High-z end -->
+            <B ID="0"> C[1] </B> <!-- boundary in x,y directions -->
+            <B ID="1"> C[2] </B> <!-- low z end -->
+            <B ID="2"> C[3] </B> <!-- high z end -->
         </BOUNDARYREGIONS>
 
         <BOUNDARYCONDITIONS>
-             <!-- x -->
+            <!-- boundary in x,y directions -->
             <REGION REF="0">
-                <P VAR="ne"  VALUE="[1]" />
-                <P VAR="Ge"  VALUE="[1]" />
+                <D VAR="ne" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+                <D VAR="Ge" VALUE="(z-1)" />  <!-- this is a test of uniform translation -->
             </REGION>
+            <!-- low z end -->
             <REGION REF="1">
-                <P VAR="ne"  VALUE="[0]" />
-                <P VAR="Ge"  VALUE="[0]" />
+                <D VAR="ne"  VALUE="1/delta" />
+                <D VAR="Ge"  VALUE="-1" />
             </REGION>
-
-            <!-- y -->
+            <!-- high z end -->
 	        <REGION REF="2">
-                <P VAR="ne"  VALUE="[3]" />
-                <P VAR="Ge"  VALUE="[3]" />
-            </REGION>
-            <REGION REF="3">
-                <P VAR="ne"  VALUE="[2]" />
-                <P VAR="Ge"  VALUE="[2]" />
+                <D VAR="ne"  VALUE="1/delta" />
+                <D VAR="Ge"  VALUE="1" />
             </REGION>
 
-            <!-- z -->
-            <REGION REF="4">
-                <D VAR="ne"  VALUE="n_star/sqrt(T)" />
-                <D VAR="Ge"  VALUE="-n_star" />
-            </REGION>
-            <REGION REF="5">
-                <D VAR="ne"  VALUE="n_star/sqrt(T)" />
-                <D VAR="Ge"  VALUE="2*n_star" />
-            </REGION>
         </BOUNDARYCONDITIONS>
         <FUNCTION NAME="InitialConditions">
-            <E VAR="ne"  DOMAIN="0" VALUE="n_star/sqrt(T)" />
-            <!-- Mesh runs from -1 to +1 in z -->
-            <E VAR="Ge"  DOMAIN="0" VALUE="z" />
+            <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+            <E VAR="Ge"  DOMAIN="0" VALUE="(z-1)" />
         </FUNCTION>
         <FUNCTION NAME="dens_src">
-            <E VAR="ne" VALUE="n_star"/>
-        </FUNCTION>
-        <FUNCTION NAME = "ExactSolution">
-            <E VAR="ne" VALUE="(c+sqrt(c*c-4*T*n_star*n_star*z*z))/2/T" />
-            <E VAR="Ge" VALUE="(c-sqrt(c*c-4*T*n_star*n_star*z*z))/2/n_star/z" />
+            <E VAR="ne" VALUE="1.0"/>
         </FUNCTION>
     </CONDITIONS>
 </NEKTAR>

@@ -52,8 +52,8 @@ void CustomUpwindSolver::v_Solve(const int nDim, const Nek2DArrConstInner &Fwd,
                                  Nek2DArr &flux) {
   boost::ignore_unused(nDim);
 
-  ASSERTL1(CheckScalars("Vn"), "Vn not defined.");
-  ASSERTL1(CheckScalars("nz"), "nz not defined.");
+  ASSERTL0(CheckScalars("Vn"), "Vn not defined.");
+  ASSERTL0(CheckScalars("nz"), "nz not defined.");
 
   const Nek1DArr &traceVel = m_scalars["Vn"]();
   const Nek1DArr &nz = m_scalars["nz"]();

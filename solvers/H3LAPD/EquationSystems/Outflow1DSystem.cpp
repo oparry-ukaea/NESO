@@ -61,14 +61,7 @@ void Outflow1DSystem::explicit_time_int(
 void Outflow1DSystem::load_params() {
   DriftReducedSystem::load_params();
 
-  // c
-  m_session->LoadParameter("c", m_c);
-
-  // nstar
-  m_session->LoadParameter("n_star", m_nstar);
-
-  // T
-  m_session->LoadParameter("T", m_T);
+  // No additional params to load
 }
 
 // dummy
@@ -90,7 +83,9 @@ void Outflow1DSystem::get_gradP_bulk_flux(
   int Ge_idx = m_field_to_index.get_idx("Ge");
 
   constexpr int z_dir = 2;
-  for (int i = 0; i < field_vals[0].size(); ++i) {
+  NESOASSERT(ne_idx == 0 && Ge_idx == 1, "Unexpected indices");
+  NESOASSERT(flux[Ge_idx].size() == 3, "Unexpected flux dim");
+  for (int i = 0; i < field_vals[ne_idx].size(); ++i) {
     flux[Ge_idx][z_dir][i] += field_vals[ne_idx][i];
   }
 }
