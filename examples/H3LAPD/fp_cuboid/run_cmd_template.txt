@@ -1,0 +1,1 @@
+mpirun -n <NMPI> <SOLVER_EXEC> lapd.xml cuboid.xml
