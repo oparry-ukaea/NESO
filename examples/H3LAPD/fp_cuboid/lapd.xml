@@ -152,19 +152,19 @@
             <!-- z -->
             <REGION REF="4">
                 <D VAR="ne"  VALUE="nRef" />
-                <D VAR="Ge"  VALUE="nRef*vtmp*me" />
-                <D VAR="Gd"  VALUE="nRef*vtmp*md" />
-                <!-- <D VAR="Ge"  USERDEFINEDTYPE="ConstVelBCs" VALUE="-vtmp" />
-                <D VAR="Gd"  USERDEFINEDTYPE="ConstVelBCs" VALUE="-vtmp" /> -->
+                <!-- <D VAR="Ge"  VALUE="nRef*vtmp*me" />
+                <D VAR="Gd"  VALUE="nRef*vtmp*md" /> -->
+                <D VAR="Ge"  USERDEFINEDTYPE="Sheath" VALUE="me*vtmp" />
+                <D VAR="Gd"  USERDEFINEDTYPE="Sheath" VALUE="md*vtmp" />
                 <P VAR="w"   VALUE="[5]" />
                 <P VAR="phi" VALUE="[5]" />
             </REGION>
             <REGION REF="5">
                 <D VAR="ne"  VALUE="nRef" />
-                <D VAR="Ge"  VALUE="nRef*vtmp*me" />
-                <D VAR="Gd"  VALUE="nRef*vtmp*md" />
-                <!-- <D VAR="Ge"  USERDEFINEDTYPE="ConstVelBCs" VALUE="vtmp" />
-                <D VAR="Gd"  USERDEFINEDTYPE="ConstVelBCs" VALUE="vtmp" /> -->
+                <!-- <D VAR="Ge"  VALUE="nRef*vtmp*me" />
+                <D VAR="Gd"  VALUE="nRef*vtmp*md" /> -->
+                <D VAR="Ge"  USERDEFINEDTYPE="Sheath" VALUE="me*vtmp" />
+                <D VAR="Gd"  USERDEFINEDTYPE="Sheath" VALUE="md*vtmp" />
                 <P VAR="w"   VALUE="[4]" />
                 <P VAR="phi" VALUE="[4]" />
             </REGION>
