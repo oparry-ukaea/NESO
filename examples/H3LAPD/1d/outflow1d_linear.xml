@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<NEKTAR>
+    <COLLECTIONS DEFAULT="MatrixFree" />
+    <!--
+        The composite index for the domain is expected to be 0 if the mesh was generated from either of the .geo files
+     -->
+    <EXPANSIONS>
+       <E COMPOSITE="C[0]" NUMMODES="3" TYPE="MODIFIED" FIELDS="ne,Ge" />
+    </EXPANSIONS>
+
+    <CONDITIONS>
+        <SOLVERINFO>
+            <I PROPERTY="EQTYPE"                   VALUE="Outflow1D"                 />
+            <I PROPERTY="AdvectionType"            VALUE="WeakDG"               />
+            <I PROPERTY="Projection"               VALUE="DisContinuous"        />
+            <I PROPERTY="TimeIntegrationMethod"    VALUE="ClassicalRungeKutta4" />
+            <I PROPERTY="UpwindType"               VALUE="Upwind"               />
+        </SOLVERINFO>
+
+        <GLOBALSYSSOLNINFO>
+            <V VAR="ne,Ge">
+                <I PROPERTY="GlobalSysSoln" VALUE="IterativeStaticCond" />
+                <I PROPERTY="IterativeSolverTolerance" VALUE="1e-6"/>
+            </V>
+        </GLOBALSYSSOLNINFO>
+
+        <PARAMETERS>
+            <P> TimeStep      = 5e-6             </P>
+            <P> NumSteps      = 800000                </P>
+            <P> TFinal        = NumSteps*TimeStep </P>
+            <P> IO_InfoSteps  = NumSteps+1        </P>
+            <P> IO_CheckSteps = 10000       </P>
+            <!-- Params for 1D problem -->
+            <P> delta = 0.1 </P>  <!-- parameter of solution: delta = 1 is sonic outflow, delta < 1 is subsonic outflow -->
+        </PARAMETERS>
+
+        <VARIABLES>
+            <V ID="0"> ne  </V>
+            <V ID="1"> Ge  </V>
+        </VARIABLES>
+
+        <BOUNDARYREGIONS>
+            <B ID="0"> C[1] </B> <!-- low x end -->
+            <B ID="1"> C[2] </B> <!-- high x end -->
+        </BOUNDARYREGIONS>
+
+        <BOUNDARYCONDITIONS>
+            <!-- low x end -->
+            <REGION REF="0">
+                <D VAR="ne"  VALUE="1/delta" />
+                <D VAR="Ge"  VALUE="-1" />
+            </REGION>
+            <!-- high x end -->
+	        <REGION REF="1">
+                <D VAR="ne"  VALUE="1/delta" />
+                <D VAR="Ge"  VALUE="1" />
+            </REGION>
+
+        </BOUNDARYCONDITIONS>
+        <FUNCTION NAME="InitialConditions">
+            <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(x-1)*(x-1)))" />
+            <E VAR="Ge"  DOMAIN="0" VALUE="(x-1)" />
+            <!-- <E VAR="ne"  DOMAIN="0" VALUE="1" />
+            <E VAR="Ge"  DOMAIN="0" VALUE="(x-1)" /> -->
+        </FUNCTION>
+        <FUNCTION NAME="dens_src">
+            <E VAR="ne" VALUE="1.0"/>
+        </FUNCTION>
+    </CONDITIONS>
+</NEKTAR>
