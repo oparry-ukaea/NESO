@@ -1,6 +1,7 @@
 # Identify source files
 set(H3LAPD_SRC_FILES
     BoundaryConditions/CustomBCs.cpp
+    BoundaryConditions/OpenBCs.cpp
     BoundaryConditions/SheathBCs.cpp
     EquationSystems/CheckPhiH3LAPDSystem.cpp
     EquationSystems/DriftReducedSystem.cpp

@@ -18,7 +18,7 @@ CustomBCs::CustomBCs(const LU::SessionReaderSharedPtr &session,
     : m_session(session), m_fields(fields), m_traceNormals(trace_normals),
       m_spacedim(space_dim), m_bcRegion(bc_region), m_offset(cnt), m_cnd(cnd),
       m_field_to_index(session->GetVariables()) {
-  ASSERTL0(space_dim == 3, "CustomBCs only set up for space_dim=3");
+  // ASSERTL0(space_dim == 3, "CustomBCs only set up for space_dim=3");
   SD::BoundaryConditionType BCtype = m_cnd->GetBoundaryConditionType();
   ASSERTL0(BCtype == SD::eDirichlet || BCtype == SD::eNeumann,
            "CustomBCs must be either Dirichlet or Neumann type");
