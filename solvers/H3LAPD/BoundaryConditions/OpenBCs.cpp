@@ -28,6 +28,9 @@ void OpenBCs::v_Apply(Array<OneD, Array<OneD, NekDouble>> &Fwd,
   const Array<OneD, const int> &traceBndMap =
       m_fields[m_dens_idx]->GetTraceBndMap();
 
+  Array<OneD, NekDouble> xc_all(m_fields[m_field_idx]->GetTotPoints());
+  m_fields[m_field_idx]->GetCoords(xc_all);
+
   // Loop over all explists in this region
   auto explists = m_fields[m_dens_idx]->GetBndCondExpansions()[m_bcRegion];
   // std::cout << "Setting region " << m_bcRegion << " BCs" << std::endl;
@@ -41,27 +44,26 @@ void OpenBCs::v_Apply(Array<OneD, Array<OneD, NekDouble>> &Fwd,
     int trace_offset = m_fields[m_dens_idx]->GetTrace()->GetPhys_Offset(
         traceBndMap[m_offset + e]);
 
-    Array<OneD, NekDouble> xc(explist->GetTotPoints());
-    explist->GetCoords(xc);
-
-    Array<OneD, NekDouble> target(explist->GetTotPoints());
-    evaluate_expression(explist, target);
     // Loop over points in this explist
     for (int idx_in_explist = 0; idx_in_explist < explist->GetTotPoints();
          idx_in_explist++) {
       int pt_idx = trace_offset + idx_in_explist;
 
-      // std::cout << "xcoord = " << xc[idx_in_explist] << std::endl;
+      Array<OneD, NekDouble> coords(1, xc_all[pt_idx]);
+      NekDouble field_val = m_fields[m_dens_idx]->GetPhys()[pt_idx];
+      NekDouble BC_val = (m_fields[m_field_idx]
+                              ->GetBndCondExpansions()[m_bcRegion]
+                              ->UpdatePhys())[explist_offset + idx_in_explist];
 
-      NekDouble current_val = m_fields[m_dens_idx]->GetPhys()[pt_idx];
-      NekDouble target_val = target[idx_in_explist];
-      (m_fields[m_field_idx]
-           ->GetBndCondExpansions()[m_bcRegion]
-           ->UpdatePhys())[explist_offset + idx_in_explist] =
-          (0.8 * current_val + 0.2 * target_val);
-      // std::cout << "Setting " << 0.8 * current_val + 0.2 * target_val
-      //           << std::endl;
-      // int foo = 1;
+      if (BC_val != field_val) {
+        // std::cout << "Boundary at x = " << xc_all[pt_idx]
+        //           << "; current = " << BC_val << "; setting " << field_val
+        //           << std::endl;
+
+        (m_fields[m_field_idx]
+             ->GetBndCondExpansions()[m_bcRegion]
+             ->UpdatePhys())[explist_offset + idx_in_explist] = field_val;
+      }
     }
   }
 }
