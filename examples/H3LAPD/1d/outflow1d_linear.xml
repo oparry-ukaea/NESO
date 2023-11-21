@@ -51,12 +51,12 @@
         <BOUNDARYCONDITIONS>
             <!-- low x end -->
             <REGION REF="0">
-                <D VAR="ne" USERDEFINEDTYPE="Open" VALUE="0"/>
+                <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="-1" />
             </REGION>
             <!-- high x end -->
 	        <REGION REF="1">
-                <D VAR="ne" USERDEFINEDTYPE="Open" VALUE="0"/>
+                <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="1" />
             </REGION>
         </BOUNDARYCONDITIONS>
