@@ -25,11 +25,11 @@
         </GLOBALSYSSOLNINFO>
 
         <PARAMETERS>
-            <P> TimeStep      = 0.0025             </P>
-            <P> NumSteps      = 200                </P>
+            <P> TimeStep      = 5e-6             </P>
+            <P> NumSteps      = 800000                </P>
             <P> TFinal        = NumSteps*TimeStep </P>
             <P> IO_InfoSteps  = NumSteps+1        </P>
-            <P> IO_CheckSteps = 5       </P>
+            <P> IO_CheckSteps = 10000       </P>
             <!-- Params for 1D problem -->
             <P> delta = 0.1 </P>  <!-- parameter of solution: delta = 1 is sonic outflow, delta < 1 is subsonic outflow -->
         </PARAMETERS>
@@ -40,32 +40,28 @@
         </VARIABLES>
 
         <BOUNDARYREGIONS>
-            <B ID="0"> C[1] </B> <!-- boundary in x,y directions -->
-            <B ID="1"> C[2] </B> <!-- low z end -->
-            <B ID="2"> C[3] </B> <!-- high z end -->
+            <B ID="0"> C[1] </B> <!-- low x end -->
+            <B ID="1"> C[2] </B> <!-- high x end -->
         </BOUNDARYREGIONS>
 
         <BOUNDARYCONDITIONS>
-            <!-- boundary in x,y directions -->
+            <!-- low x end -->
             <REGION REF="0">
-                <D VAR="ne" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
-                <D VAR="Ge" VALUE="(z-1)" />  <!-- this is a test of uniform translation -->
-            </REGION>
-            <!-- low z end -->
-            <REGION REF="1">
                 <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="-1" />
             </REGION>
-            <!-- high z end -->
-	        <REGION REF="2">
+            <!-- high x end -->
+	        <REGION REF="1">
                 <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="1" />
             </REGION>
 
         </BOUNDARYCONDITIONS>
         <FUNCTION NAME="InitialConditions">
-            <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
-            <E VAR="Ge"  DOMAIN="0" VALUE="(z-1)" />
+            <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(x-1)*(x-1)))" />
+            <E VAR="Ge"  DOMAIN="0" VALUE="(x-1)" />
+            <!-- <E VAR="ne"  DOMAIN="0" VALUE="1" />
+            <E VAR="Ge"  DOMAIN="0" VALUE="(x-1)" /> -->
         </FUNCTION>
         <FUNCTION NAME="dens_src">
             <E VAR="ne" VALUE="1.0"/>

@@ -12,8 +12,10 @@ DriftReducedSystem::DriftReducedSystem(
       m_field_to_index(session->GetVariables()),
       m_adv_vel_elec(graph->GetSpaceDimension()),
       m_ExB_vel(graph->GetSpaceDimension()), m_E(graph->GetSpaceDimension()) {
-  // Construct particle system
-  m_particle_sys = std::make_shared<NeutralParticleSystem>(session, graph);
+  // Construct particle system (3D only)
+  if (graph->GetSpaceDimension() == 3) {
+    m_particle_sys = std::make_shared<NeutralParticleSystem>(session, graph);
+  }
   m_required_flds = {"ne", "w", "phi"};
   m_int_fld_names = {"ne", "w"};
 }
@@ -151,6 +153,9 @@ void DriftReducedSystem::add_particle_sources(
  */
 void DriftReducedSystem::calc_E_and_adv_vels(
     const Array<OneD, const Array<OneD, NekDouble>> &in_arr) {
+  // Only meaningful in 3D
+  NESOASSERT(m_graph->GetSpaceDimension() == 3,
+             "calc_E_and_adv_vels assumes ndims=3");
   int phi_idx = m_field_to_index.get_idx("phi");
   int npts = GetNpoints();
   m_fields[phi_idx]->PhysDeriv(m_fields[phi_idx]->GetPhys(), m_E[0], m_E[1],
@@ -322,7 +327,7 @@ void DriftReducedSystem::load_params() {
   // ***Assumes field aligned with z-axis***
   // Magnetic field strength. Fix B = [0, 0, Bxy] for now
   m_B = std::vector<NekDouble>(m_graph->GetSpaceDimension(), 0);
-  m_session->LoadParameter("Bxy", m_B[2], 0.1);
+  m_session->LoadParameter("Bxy", m_B[m_graph->GetSpaceDimension() - 1], 0.1);
 
   // Coefficient factors for potential solve
   m_session->LoadParameter("d00", m_d00, 1);
@@ -425,6 +430,8 @@ void DriftReducedSystem::print_arr_vals(const Array<OneD, NekDouble> &arr,
 void DriftReducedSystem::solve_phi(
     const Array<OneD, const Array<OneD, NekDouble>> &in_arr) {
 
+  NESOASSERT(m_graph->GetSpaceDimension() == 3, "solve_phi assumes ndims=3");
+
   // Field indices
   int npts = GetNpoints();
   int phi_idx = m_field_to_index.get_idx("phi");
@@ -478,7 +485,7 @@ void DriftReducedSystem::validate_fields() {
  */
 void DriftReducedSystem::v_InitObject(bool create_field) {
   // If particle-coupling is enabled,
-  if (this->m_particle_sys->m_num_particles > 0) {
+  if (m_particle_sys && m_particle_sys->m_num_particles > 0) {
     m_required_flds.push_back("ne_src");
   }
 
@@ -492,7 +499,12 @@ void DriftReducedSystem::v_InitObject(bool create_field) {
   load_params();
 
   // Compute some properties derived from params
-  m_Bmag = std::sqrt(m_B[0] * m_B[0] + m_B[1] * m_B[1] + m_B[2] * m_B[2]);
+  m_Bmag = 0.0;
+  for (auto idim = 0; idim < m_b_unit.size(); idim++) {
+    m_Bmag += m_B[idim] * m_B[idim];
+  }
+  m_Bmag = std::sqrt(m_Bmag);
+
   m_b_unit = std::vector<NekDouble>(m_graph->GetSpaceDimension());
   for (auto idim = 0; idim < m_b_unit.size(); idim++) {
     m_b_unit[idim] = (m_Bmag > 0) ? m_B[idim] / m_Bmag : 0.0;
@@ -610,7 +622,7 @@ void DriftReducedSystem::v_InitObject(bool create_field) {
     idx++;
   }
 
-  if (m_particle_sys->m_num_particles > 0) {
+  if (m_particle_sys && m_particle_sys->m_num_particles > 0) {
     // Set up object to project onto density source field
     int low_order_project;
     m_session->LoadParameter("low_order_project", low_order_project, 0);
@@ -636,7 +648,7 @@ void DriftReducedSystem::v_InitObject(bool create_field) {
  */
 bool DriftReducedSystem::v_PostIntegrate(int step) {
   // Writes a step of the particle trajectory.
-  if (m_num_write_particle_steps > 0 &&
+  if (m_particle_sys && m_num_write_particle_steps > 0 &&
       (step % m_num_write_particle_steps) == 0) {
     m_particle_sys->write(step);
     m_particle_sys->write_source_fields();
@@ -651,7 +663,7 @@ bool DriftReducedSystem::v_PostIntegrate(int step) {
  * @param step Time step number
  */
 bool DriftReducedSystem::v_PreIntegrate(int step) {
-  if (m_particle_sys->m_num_particles > 0) {
+  if (m_particle_sys && m_particle_sys->m_num_particles > 0) {
     // Integrate the particle system to the requested time.
     m_particle_sys->integrate(m_time + m_timestep, m_part_timestep);
     // Project onto the source fields
