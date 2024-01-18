@@ -105,6 +105,48 @@ void DriftReducedSystem::add_density_source(
   Vmath::Vadd(npts, out_arr[ne_idx], 1, dens_src, 1, out_arr[ne_idx], 1);
 }
 
+void DriftReducedSystem::add_diff_terms(
+    std::vector<std::string> field_names,
+    const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+    Array<OneD, Array<OneD, NekDouble>> &out_arr,
+    std::vector<std::string> eqn_labels) {
+
+  // Default is to add result of diffusing field f to the RHS of df/dt equation
+  if (eqn_labels.empty()) {
+    eqn_labels = std::vector(field_names);
+  } else {
+    ASSERTL1(
+        field_names.size() == eqn_labels.size(),
+        "add_diff_terms: Number of quantities being diffused must match the "
+        "number of equation labels.");
+  }
+
+  int nfields = field_names.size();
+  int npts = in_arr[0].size();
+
+  // Make temporary copies of target fields, in_arr vals and initialise a
+  // temporary output array
+  Array<OneD, MultiRegions::ExpListSharedPtr> tmp_fields(nfields);
+  Array<OneD, Array<OneD, NekDouble>> tmp_in_arr(nfields);
+  Array<OneD, Array<OneD, NekDouble>> tmp_out_arr(nfields);
+  for (auto ii = 0; ii < nfields; ii++) {
+    int idx = m_field_to_index.get_idx(field_names[ii]);
+    tmp_fields[ii] = m_fields[idx];
+    tmp_in_arr[ii] = Array<OneD, NekDouble>(npts);
+    Vmath::Vcopy(npts, in_arr[idx], 1, tmp_in_arr[ii], 1);
+    tmp_out_arr[ii] = Array<OneD, NekDouble>(out_arr[idx].size(), 0.0);
+  }
+  // Compute diffusion terms; result is returned in temporary output array
+  m_diffusion->Diffuse(tmp_fields.size(), tmp_fields, tmp_in_arr, tmp_out_arr);
+
+  // Add temporary output array to the appropriate indices of out_arr
+  for (auto ii = 0; ii < nfields; ii++) {
+    int idx = m_field_to_index.get_idx(eqn_labels[ii]);
+    Vmath::Vadd(out_arr[idx].size(), out_arr[idx], 1, tmp_out_arr[ii], 1,
+                out_arr[idx], 1);
+  }
+}
+
 /**
  * @brief Adds particle sources.
  * @details For each <field_name> in @p target_fields , look for another field
@@ -274,14 +316,22 @@ void DriftReducedSystem::get_flux_vector(
 }
 
 /**
- * @brief Construct the flux vector for the diffusion problem.
- * @todo not implemented
+ * @brief Construct the flux vector for diffusion.
  */
 void DriftReducedSystem::get_flux_vector_diff(
     const Array<OneD, Array<OneD, NekDouble>> &in_arr,
     const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &q_field,
     Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &viscous_tensor) {
-  std::cout << "*** GetFluxVectorDiff not defined! ***" << std::endl;
+  boost::ignore_unused(in_arr);
+
+  unsigned int nDim = q_field.size();
+  unsigned int nConvectiveFields = q_field[0].size();
+  unsigned int nPts = q_field[0][0].size();
+  for (unsigned int j = 0; j < nDim; ++j) {
+    for (unsigned int i = 0; i < nConvectiveFields; ++i) {
+      Vmath::Smul(nPts, m_epsilon, q_field[j][i], 1, viscous_tensor[j][i], 1);
+    }
+  }
 }
 
 /**
@@ -324,10 +374,17 @@ void DriftReducedSystem::load_params() {
   m_B = std::vector<NekDouble>(m_graph->GetSpaceDimension(), 0);
   m_session->LoadParameter("Bxy", m_B[2], 0.1);
 
+  // Diffusion type
+  m_session->LoadSolverInfo("DiffusionType", m_diff_type, "LDG");
+  m_diffusion = SolverUtils::GetDiffusionFactory().CreateInstance(m_diff_type,
+                                                                  m_diff_type);
+
   // Coefficient factors for potential solve
   m_session->LoadParameter("d00", m_d00, 1);
   m_session->LoadParameter("d11", m_d11, 1);
   m_session->LoadParameter("d22", m_d22, 1);
+
+  m_session->LoadParameter("epsilon", m_epsilon, 1e-3);
 
   // Factor to set density floor; default to 1e-5 (Hermes-3 default)
   m_session->LoadParameter("n_floor_fac", m_n_floor_fac, 1e-5);

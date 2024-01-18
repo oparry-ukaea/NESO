@@ -7,6 +7,7 @@
 #include "nektar_interface/utilities.hpp"
 #include <LibUtilities/Memory/NekMemoryManager.hpp>
 #include <SolverUtils/AdvectionSystem.h>
+#include <SolverUtils/Diffusion/Diffusion.h>
 #include <SolverUtils/EquationSystem.h>
 #include <SolverUtils/Forcing/Forcing.h>
 #include <SolverUtils/RiemannSolvers/RiemannSolver.h>
@@ -53,6 +54,10 @@ protected:
   NekDouble m_Bmag;
   /// Normalised magnetic field vector
   std::vector<NekDouble> m_b_unit;
+  // Diffusion type
+  std::string m_diff_type;
+  // Diffusion object
+  SolverUtils::DiffusionSharedPtr m_diffusion;
   /// Map to allow terms to be disabled
   std::map<std::string, bool> m_disabled;
   /** Source fields cast to DisContFieldSharedPtr, indexed by name, for use in
@@ -90,6 +95,12 @@ protected:
 
   void add_density_source(Array<OneD, Array<OneD, NekDouble>> &out_arr);
 
+  void add_diff_terms(
+      std::vector<std::string> field_names,
+      const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
+      Array<OneD, Array<OneD, NekDouble>> &out_arr,
+      std::vector<std::string> eqn_labels = std::vector<std::string>());
+
   void add_particle_sources(std::vector<std::string> target_fields,
                             Array<OneD, Array<OneD, NekDouble>> &out_arr);
 
@@ -108,6 +119,10 @@ protected:
   void get_flux_vector(const Array<OneD, Array<OneD, NekDouble>> &fields_vals,
                        const Array<OneD, Array<OneD, NekDouble>> &adv_vel,
                        Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
+  void get_flux_vector_diff(
+      const Array<OneD, Array<OneD, NekDouble>> &in_arr,
+      const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &q_field,
+      Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &viscous_tensor);
 
   virtual void
   get_phi_solve_rhs(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
@@ -162,10 +177,6 @@ private:
   Array<OneD, NekDouble> &get_adv_vel_norm_elec();
   Array<OneD, NekDouble> &get_adv_vel_norm_vort();
 
-  void get_flux_vector_diff(
-      const Array<OneD, Array<OneD, NekDouble>> &in_arr,
-      const Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &q_field,
-      Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &viscous_tensor);
   void
   get_flux_vector_elec(const Array<OneD, Array<OneD, NekDouble>> &fields_vals,
                        Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);

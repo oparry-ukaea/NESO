@@ -54,6 +54,9 @@ void Outflow1DSystem::explicit_time_int(
   add_adv_terms({"ne", "Ge"}, m_adv_with_gradP, m_adv_vel_elec, in_arr, out_arr,
                 time);
 
+  // Diffusion
+  add_diff_terms({"ne", "Ge"}, in_arr, out_arr);
+
   // Add source to ne equation
   add_density_source(out_arr);
 }
@@ -135,6 +138,12 @@ void Outflow1DSystem::v_InitObject(bool declare_field) {
   // Bind to quasi-advection object
   m_adv_with_gradP->SetRiemannSolver(m_riemann_gradP);
   m_adv_with_gradP->InitObject(m_session, m_fields);
+
+  // Set up diffusion
+  m_diffusion = SolverUtils::GetDiffusionFactory().CreateInstance(m_diff_type,
+                                                                  m_diff_type);
+  m_diffusion->SetFluxVector(&Outflow1DSystem::get_flux_vector_diff, this);
+  m_diffusion->InitObject(m_session, m_fields);
 }
 
 } // namespace NESO::Solvers::H3LAPD
