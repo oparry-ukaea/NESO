@@ -33,7 +33,11 @@ public:
   static std::string class_name;
 
   /// Free particle system memory on destruction
-  virtual ~DriftReducedSystem() { m_particle_sys->free(); }
+  virtual ~DriftReducedSystem() {
+    if (m_particle_sys) {
+      m_particle_sys->free();
+    }
+  }
 
 protected:
   DriftReducedSystem(const LU::SessionReaderSharedPtr &session,

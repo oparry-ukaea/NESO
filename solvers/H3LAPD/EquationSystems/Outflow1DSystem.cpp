@@ -26,10 +26,9 @@ void Outflow1DSystem::explicit_time_int(
   for (auto &var : {"ne", "Ge"}) {
     auto fidx = m_field_to_index.get_idx(var);
     for (auto ii = 0; ii < in_arr[fidx].size(); ii++) {
-      if (!std::isfinite(in_arr[fidx][ii])) {
-        std::cout << "NaN in field " << var << ", aborting." << std::endl;
-        exit(1);
-      }
+      std::stringstream tmp;
+      tmp << "NaN in field " << var << ", aborting." << std::endl;
+      NESOASSERT(std::isfinite(in_arr[fidx][ii]), tmp.str().c_str());
     }
   }
 
@@ -53,6 +52,8 @@ void Outflow1DSystem::explicit_time_int(
   // Add advection terms to ne and Ge equations, gradP flux to Ge equation
   add_adv_terms({"ne", "Ge"}, m_adv_with_gradP, m_adv_vel_elec, in_arr, out_arr,
                 time);
+  // add_adv_terms({"ne", "Ge"}, m_adv_elec, m_adv_vel_elec, in_arr, out_arr,
+  //               time);
 
   // Add source to ne equation
   add_density_source(out_arr);
@@ -61,6 +62,8 @@ void Outflow1DSystem::explicit_time_int(
 void Outflow1DSystem::load_params() {
   DriftReducedSystem::load_params();
 
+  NESOASSERT(m_riemann_solver_type == "LFOutflow",
+             "This solver only works with UpWindType LFOutflow");
   // No additional params to load
 }
 
@@ -85,13 +88,14 @@ void Outflow1DSystem::get_gradP_bulk_flux(
    */
   int ne_idx = m_field_to_index.get_idx("ne");
   int Ge_idx = m_field_to_index.get_idx("Ge");
-  constexpr int z_dir = 2;
+  int flow_dim = m_graph->GetSpaceDimension() - 1;
   NESOASSERT(ne_idx == 0 && Ge_idx == 1, "Unexpected indices");
-  NESOASSERT(flux[Ge_idx].size() == 3, "Unexpected flux dim");
+  NESOASSERT(flux[Ge_idx].size() == m_graph->GetSpaceDimension(),
+             "Unexpected flux dim");
 
   // Add gradP term
   for (int i = 0; i < field_vals[ne_idx].size(); ++i) {
-    flux[Ge_idx][z_dir][i] += field_vals[ne_idx][i];
+    flux[Ge_idx][flow_dim][i] += field_vals[ne_idx][i];
   }
 }
 
@@ -104,7 +108,15 @@ Array<OneD, NekDouble> &Outflow1DSystem::get_adv_vel_norm_gradP() {
 }
 
 Array<OneD, NekDouble> &Outflow1DSystem::get_trace_normal_z() {
-  return m_traceNormals[2];
+  if (m_graph->GetSpaceDimension() == 3) {
+    return m_traceNormals[2];
+  } else if (m_graph->GetSpaceDimension() == 1) {
+    return m_traceNormals[0];
+  } else {
+    NESOASSERT(false, "Not set up for 2D");
+    // Keep compiler happy
+    return m_traceNormals[0];
+  }
 }
 
 /**
@@ -126,11 +138,8 @@ void Outflow1DSystem::v_InitObject(bool declare_field) {
   m_adv_with_gradP->SetFluxVector(&Outflow1DSystem::get_gradP_bulk_flux, this);
 
   // Create Riemann solver
-  m_riemann_gradP =
-      SU::GetRiemannSolverFactory().CreateInstance("Custom", m_session);
-  m_riemann_gradP->SetScalar("nz", &Outflow1DSystem::get_trace_normal_z, this);
-  m_riemann_gradP->SetScalar("Vn", &Outflow1DSystem::get_adv_vel_norm_gradP,
-                             this);
+  m_riemann_gradP = SU::GetRiemannSolverFactory().CreateInstance(
+      m_riemann_solver_type, m_session);
 
   // Bind to quasi-advection object
   m_adv_with_gradP->SetRiemannSolver(m_riemann_gradP);
