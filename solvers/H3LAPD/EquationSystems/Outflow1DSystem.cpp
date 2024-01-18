@@ -62,6 +62,8 @@ void Outflow1DSystem::explicit_time_int(
 void Outflow1DSystem::load_params() {
   DriftReducedSystem::load_params();
 
+  NESOASSERT(m_riemann_solver_type == "LFOutflow",
+             "This solver only works with UpWindType LFOutflow");
   // No additional params to load
 }
 
@@ -136,11 +138,8 @@ void Outflow1DSystem::v_InitObject(bool declare_field) {
   m_adv_with_gradP->SetFluxVector(&Outflow1DSystem::get_gradP_bulk_flux, this);
 
   // Create Riemann solver
-  m_riemann_gradP =
-      SU::GetRiemannSolverFactory().CreateInstance("Custom", m_session);
-  m_riemann_gradP->SetScalar("nz", &Outflow1DSystem::get_trace_normal_z, this);
-  m_riemann_gradP->SetScalar("Vn", &Outflow1DSystem::get_adv_vel_norm_gradP,
-                             this);
+  m_riemann_gradP = SU::GetRiemannSolverFactory().CreateInstance(
+      m_riemann_solver_type, m_session);
 
   // Bind to quasi-advection object
   m_adv_with_gradP->SetRiemannSolver(m_riemann_gradP);

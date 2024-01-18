@@ -9,6 +9,7 @@ set(H3LAPD_SRC_FILES
     EquationSystems/Outflow1DSystem.cpp
     EquationSystems/ReducedH3LAPDSystem.cpp
     RiemannSolvers/CustomUpwindSolver.cpp
+    RiemannSolvers/LaxFriedrichsWithOutflowSolver.cpp
     H3LAPD.cpp)
 
 # ============================== Object library ===============================
