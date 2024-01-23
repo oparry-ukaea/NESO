@@ -40,28 +40,43 @@
         </VARIABLES>
 
         <BOUNDARYREGIONS>
-            <B ID="0"> C[1] </B> <!-- boundary in x,y directions -->
-            <B ID="1"> C[2] </B> <!-- low z end -->
-            <B ID="2"> C[3] </B> <!-- high z end -->
+            <B ID="0"> C[1] </B> <!-- Low x -->
+            <B ID="1"> C[2] </B> <!-- High x -->
+            <B ID="2"> C[3] </B> <!-- Low y -->
+            <B ID="3"> C[4] </B> <!-- High y -->
+            <B ID="4"> C[5] </B> <!-- Low-z end -->
+            <B ID="5"> C[6] </B> <!-- High-z end -->
         </BOUNDARYREGIONS>
 
         <BOUNDARYCONDITIONS>
-            <!-- boundary in x,y directions -->
+            <!-- boundaries in x direction -->
             <REGION REF="0">
-                <D VAR="ne" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
-                <D VAR="Ge" VALUE="(z-1)" />  <!-- this is a test of uniform translation -->
+                <P VAR="ne"     VALUE="[1]" />
+                <P VAR="Ge"      VALUE="[1]" />
+            </REGION>
+            <REGION REF="1">
+                <P VAR="ne"     VALUE="[0]" />
+                <P VAR="Ge"      VALUE="[0]" />
+            </REGION>
+            <!-- boundaries in y direction -->
+            <REGION REF="2">
+                <P VAR="ne"     VALUE="[3]" />
+                <P VAR="Ge"      VALUE="[3]" />
+            </REGION>
+            <REGION REF="3">
+                <P VAR="ne"     VALUE="[2]" />
+                <P VAR="Ge"      VALUE="[2]" />
             </REGION>
             <!-- low z end -->
-            <REGION REF="1">
+            <REGION REF="4">
                 <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="-1" />
             </REGION>
             <!-- high z end -->
-	        <REGION REF="2">
+	        <REGION REF="5">
                 <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="1" />
             </REGION>
-
         </BOUNDARYCONDITIONS>
         <FUNCTION NAME="InitialConditions">
             <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
