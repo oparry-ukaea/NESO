@@ -14,7 +14,7 @@
             <I PROPERTY="AdvectionType"            VALUE="WeakDG"               />
             <I PROPERTY="Projection"               VALUE="DisContinuous"        />
             <I PROPERTY="TimeIntegrationMethod"    VALUE="ClassicalRungeKutta4" />
-            <I PROPERTY="UpwindType"               VALUE="Upwind"               />
+            <I PROPERTY="UpwindType"               VALUE="LFOutflow"               />
         </SOLVERINFO>
 
         <GLOBALSYSSOLNINFO>
