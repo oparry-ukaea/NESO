@@ -25,11 +25,11 @@
         </GLOBALSYSSOLNINFO>
 
         <PARAMETERS>
-            <P> TimeStep      = 0.0025             </P>
-            <P> NumSteps      = 100               </P>
+            <P> TimeStep      = 1e-4             </P>
+            <P> NumSteps      = 80000          </P>
             <P> TFinal        = NumSteps*TimeStep </P>
-            <P> IO_InfoSteps  = NumSteps+1        </P>
-            <P> IO_CheckSteps = NumSteps/20       </P>
+            <P> IO_InfoSteps  = 1        </P>
+            <P> IO_CheckSteps = 1       </P>
             <!-- Params for 1D problem -->
             <P> delta = 0.1 </P>  <!-- parameter of solution: delta = 1 is sonic outflow, delta < 1 is subsonic outflow -->
         </PARAMETERS>
