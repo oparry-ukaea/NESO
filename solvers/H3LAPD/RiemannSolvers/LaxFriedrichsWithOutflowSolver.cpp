@@ -42,28 +42,24 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     NekDouble nu_L = Fwd[1][j];
     NekDouble n_R = Bwd[0][j];
     NekDouble nu_R = Bwd[1][j];
+    NekDouble u_L = nu_L / n_L;
 
+    double mag_uinf = 0.1;
+    // Override R conditions for boundaries
     if (j == 0) {
       // x = 0
       n_R = n_L;
-      // nu_R = nu_L;
-
-      NekDouble u_L = nu_L / n_L;
-      const NekDouble uinf = -1.0;
+      const NekDouble uinf = -mag_uinf;
       NekDouble ub = u_L + (uinf - u_L * uinf * (-1.0)) * (-1.0);
       nu_R = n_L * (ub);
     } else if (j == 1) {
-      // x = 2
       n_R = n_L;
-      // nu_R = nu_L;
-      NekDouble u_L = nu_L / n_L;
-      const NekDouble uinf = 1.0;
+      const NekDouble uinf = mag_uinf;
       NekDouble ub = u_L + (uinf - u_L * uinf * (1.0)) * (1.0);
       nu_R = n_L * (ub);
     }
 
     // Velocity
-    NekDouble u_L = nu_L / n_L;
     NekDouble u_R = nu_R / n_R;
 
     // const temperature

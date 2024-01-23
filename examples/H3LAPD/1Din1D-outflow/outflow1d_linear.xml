@@ -31,7 +31,7 @@
             <P> IO_InfoSteps  = NumSteps+1        </P>
             <P> IO_CheckSteps = NumSteps/200       </P>
             <!-- Params for 1D problem -->
-            <P> delta = 1.0 </P>  <!-- parameter of solution: delta = 1 is sonic outflow, delta < 1 is subsonic outflow -->
+            <P> delta = 0.1 </P>  <!-- parameter of solution: delta = 1 is sonic outflow, delta < 1 is subsonic outflow -->
         </PARAMETERS>
 
         <VARIABLES>
