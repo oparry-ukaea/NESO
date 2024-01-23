@@ -34,8 +34,12 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
                                              const Nek2DArrConstInner &Fwd,
                                              const Nek2DArrConstInner &Bwd,
                                              Nek2DArr &flux) {
-  boost::ignore_unused(nDim);
 
+  ASSERTL1(CheckScalars("norms"), "Vn not defined.");
+  const Nek1DArr &norms = m_scalars["norms"]();
+
+  ASSERTL1(CheckScalars("z"), "z not defined.");
+  const Nek1DArr &z = m_scalars["z"]();
   for (int j = 0; j < Fwd[0].size(); ++j) {
     // Field variables
     NekDouble n_L = Fwd[0][j];
