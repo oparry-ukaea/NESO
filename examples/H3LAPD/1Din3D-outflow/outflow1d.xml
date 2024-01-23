@@ -51,21 +51,21 @@
         <BOUNDARYCONDITIONS>
             <!-- boundaries in x direction -->
             <REGION REF="0">
-                <P VAR="ne"     VALUE="[1]" />
-                <P VAR="Ge"      VALUE="[1]" />
+                <D VAR="ne"  VALUE="0.5*(delta+1/delta+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+                <D VAR="Ge"  VALUE="(z-1)" />
             </REGION>
             <REGION REF="1">
-                <P VAR="ne"     VALUE="[0]" />
-                <P VAR="Ge"      VALUE="[0]" />
+                <D VAR="ne"  VALUE="0.5*(delta+1/delta+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+                <D VAR="Ge"  VALUE="(z-1)" />
             </REGION>
             <!-- boundaries in y direction -->
             <REGION REF="2">
-                <P VAR="ne"     VALUE="[3]" />
-                <P VAR="Ge"      VALUE="[3]" />
+                <D VAR="ne"  VALUE="0.5*(delta+1/delta+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+                <D VAR="Ge"  VALUE="(z-1)" />
             </REGION>
             <REGION REF="3">
-                <P VAR="ne"     VALUE="[2]" />
-                <P VAR="Ge"      VALUE="[2]" />
+                <D VAR="ne"  VALUE="0.5*(delta+1/delta+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+                <D VAR="Ge"  VALUE="(z-1)" />
             </REGION>
             <!-- low z end -->
             <REGION REF="4">
@@ -80,12 +80,12 @@
         </BOUNDARYCONDITIONS>
 
         <FUNCTION NAME="ExactSolution">
-            <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+            <E VAR="ne"  DOMAIN="0" VALUE="0.5*(delta+1/delta+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
             <E VAR="Ge"  DOMAIN="0" VALUE="(z-1)" />
         </FUNCTION>
 
         <FUNCTION NAME="InitialConditions">
-            <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
+            <E VAR="ne"  DOMAIN="0" VALUE="0.5*(delta+1/delta+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
             <E VAR="Ge"  DOMAIN="0" VALUE="(z-1)" />
         </FUNCTION>
         <FUNCTION NAME="dens_src">

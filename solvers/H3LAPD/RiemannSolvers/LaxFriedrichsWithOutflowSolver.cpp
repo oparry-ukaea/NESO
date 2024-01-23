@@ -58,15 +58,17 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       std::cout << "2D outflow not setup." << std::endl;
       break;
     case 3:
+      const int nskip = 4 * 10 * 200 * 16;
       const int ntrace_outflow = 10 * 10 * 16;
 
-      if (j < ntrace_outflow) {
+      if (j >= nskip && j < nskip + ntrace_outflow) {
         is_left = true;
         if (z[j] > 1e-6 || norms[j] > -0.9999) {
           std::cout << j << ": z=" << z[j] << " with norm " << norms[j]
                     << " was assigned to LEFT boundary!?" << std::endl;
         }
-      } else if (j >= ntrace_outflow && j < 2 * ntrace_outflow) {
+      } else if (j >= nskip + ntrace_outflow &&
+                 j < nskip + 2 * ntrace_outflow) {
         is_right = true;
         if (z[j] < 1.9999 || norms[j] < 0.9999) {
           std::cout << j << ": z=" << z[j] << " with norm " << norms[j]
