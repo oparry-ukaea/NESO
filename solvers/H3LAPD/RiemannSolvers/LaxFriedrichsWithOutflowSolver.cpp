@@ -98,14 +98,13 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       const int nskip = 0;
       const int ntrace_outflow = 10 * 10 * 16;
 
-      if (j >= nskip && j < nskip + ntrace_outflow) {
+      if (z[j] < 0.0001) {
         is_left = true;
         if (z[j] > 1e-6 || norms[j] > -0.9999) {
           std::cout << j << ": z=" << z[j] << " with norm " << norms[j]
                     << " was assigned to LEFT boundary!?" << std::endl;
         }
-      } else if (j >= nskip + ntrace_outflow &&
-                 j < nskip + 2 * ntrace_outflow) {
+      } else if (z[j] > 1.9999) {
         is_right = true;
         if (z[j] < 1.9999 || norms[j] < 0.9999) {
           std::cout << j << ": z=" << z[j] << " with norm " << norms[j]
