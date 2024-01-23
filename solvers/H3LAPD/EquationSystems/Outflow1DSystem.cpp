@@ -107,6 +107,12 @@ Array<OneD, NekDouble> &Outflow1DSystem::get_adv_vel_norm_gradP() {
   return get_adv_vel_norm(norm_vels, m_adv_vel_elec);
 }
 
+Array<OneD, NekDouble> &Outflow1DSystem::get_z() {
+  Array<OneD, NekDouble> dummy(GetNpoints());
+  m_fields[0]->GetTrace()->GetCoords(dummy, dummy, m_ztmp);
+  return m_ztmp;
+}
+
 Array<OneD, NekDouble> &Outflow1DSystem::get_trace_normal_z() {
   if (m_graph->GetSpaceDimension() == 3) {
     return m_traceNormals[2];
@@ -140,6 +146,11 @@ void Outflow1DSystem::v_InitObject(bool declare_field) {
   // Create Riemann solver
   m_riemann_gradP = SU::GetRiemannSolverFactory().CreateInstance(
       m_riemann_solver_type, m_session);
+  m_riemann_gradP->SetScalar("norms", &Outflow1DSystem::get_trace_normal_z,
+                             this);
+
+  m_ztmp = Array<OneD, NekDouble>(GetNpoints());
+  m_riemann_gradP->SetScalar("z", &Outflow1DSystem::get_z, this);
 
   // Bind to quasi-advection object
   m_adv_with_gradP->SetRiemannSolver(m_riemann_gradP);

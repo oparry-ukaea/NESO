@@ -46,6 +46,9 @@ protected:
 
   void v_InitObject(bool declare_field) override;
 
+  Array<OneD, NekDouble> m_ztmp;
+  Array<OneD, NekDouble> &get_z();
+
 private:
   NekDouble m_c;
   NekDouble m_nstar;

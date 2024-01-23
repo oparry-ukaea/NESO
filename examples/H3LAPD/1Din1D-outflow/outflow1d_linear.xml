@@ -55,11 +55,11 @@
                 <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="1" />
             </REGION>
-
         </BOUNDARYCONDITIONS>
+
         <FUNCTION NAME="InitialConditions">
             <E VAR="ne"  DOMAIN="0" VALUE="1/delta+exp(-(x-1)*(x-1)/0.1/0.1)" />
-            <E VAR="Ge"  DOMAIN="0" VALUE="(x-1)*(1/delta+exp(-(x-1)*(x-1)/0.1/0.1))" />
+            <E VAR="Ge"  DOMAIN="0" VALUE="(x-1)" />
         </FUNCTION>
         <FUNCTION NAME="dens_src">
             <E VAR="ne" VALUE="1.0"/>
