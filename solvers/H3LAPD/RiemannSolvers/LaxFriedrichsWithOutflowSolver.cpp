@@ -52,10 +52,14 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       n_R = n_L;
       NekDouble ub = u_L + (m_delta - u_L * (-1.0)) * (-1.0);
       nu_R = n_L * (ub);
+      std::cout << "Setting velocity " << ub << " on left boundary"
+                << std::endl;
     } else if (j == 1) {
       n_R = n_L;
       NekDouble ub = u_L + (m_delta - u_L * (1.0)) * (1.0);
       nu_R = n_L * (ub);
+      std::cout << "Setting velocity " << ub << " on right boundary"
+                << std::endl;
     }
 
     // Velocity
