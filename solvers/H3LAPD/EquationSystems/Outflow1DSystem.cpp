@@ -94,6 +94,7 @@ void Outflow1DSystem::get_gradP_bulk_flux(
              "Unexpected flux dim");
 
   // Add gradP term
+  // This needs to be +ve ne, because the term is -ve grad(ne) (assuming T=1)
   for (int i = 0; i < field_vals[ne_idx].size(); ++i) {
     flux[Ge_idx][flow_dim][i] += field_vals[ne_idx][i];
   }
