@@ -65,7 +65,7 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     NekDouble T = 1.0;
 
     // sound speed
-    NekDouble a = sqrt(T);
+    NekDouble a = m_delta * sqrt(T);
 
     // Maximum eigenvalue given by |u-a|
     NekDouble C_L = std::max(std::abs(u_L - a), std::abs(u_L + a));
