@@ -46,18 +46,15 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     NekDouble nu_R = Bwd[1][j];
     NekDouble u_L = nu_L / n_L;
 
-    double mag_uinf = 0.1;
     // Override R conditions for boundaries
     if (j == 0) {
       // x = 0
       n_R = n_L;
-      const NekDouble uinf = -mag_uinf;
-      NekDouble ub = u_L + (uinf - u_L * uinf * (-1.0)) * (-1.0);
+      NekDouble ub = u_L + (m_delta - u_L * (-1.0)) * (-1.0);
       nu_R = n_L * (ub);
     } else if (j == 1) {
       n_R = n_L;
-      const NekDouble uinf = mag_uinf;
-      NekDouble ub = u_L + (uinf - u_L * uinf * (1.0)) * (1.0);
+      NekDouble ub = u_L + (m_delta - u_L * (1.0)) * (1.0);
       nu_R = n_L * (ub);
     }
 
