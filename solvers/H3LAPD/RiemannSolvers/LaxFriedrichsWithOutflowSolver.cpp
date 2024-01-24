@@ -22,7 +22,9 @@ std::string LaxFriedrichsWithOutflowSolver::solver_name =
  */
 LaxFriedrichsWithOutflowSolver::LaxFriedrichsWithOutflowSolver(
     const LU::SessionReaderSharedPtr &session)
-    : SU::RiemannSolver(session) {}
+    : SU::RiemannSolver(session) {
+  session->LoadParameter("delta", m_delta, 1.0);
+}
 
 /**
  *

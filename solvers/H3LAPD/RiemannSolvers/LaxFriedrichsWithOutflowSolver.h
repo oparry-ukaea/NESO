@@ -16,7 +16,6 @@ typedef Nektar::Array<Nektar::OneD, const Nek1DArr> Nek2DArrConstInner;
 
 using Nektar::NekDouble;
 
-
 /**
  * @brief Subclass Nektar's Riemann solver in order to set up non-standard
  * fluxes.
@@ -37,6 +36,9 @@ protected:
   virtual void v_Solve(const int nDim, const Nek2DArrConstInner &Fwd,
                        const Nek2DArrConstInner &Bwd,
                        Nek2DArr &flux) override final;
+
+private:
+  NekDouble m_delta;
 };
 } // namespace NESO::Solvers::H3LAPD
 
