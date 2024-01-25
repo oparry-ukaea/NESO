@@ -51,12 +51,14 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       // x = 0
       n_R = n_L;
       const NekDouble uinf = -m_delta;
-      NekDouble ub = u_L + (uinf - u_L * uinf * (-1.0)) * (-1.0);
+      NekDouble norm = -1.0;
+      NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
       nu_R = n_L * (ub);
     } else if (j == 1) {
       n_R = n_L;
       const NekDouble uinf = m_delta;
-      NekDouble ub = u_L + (uinf - u_L * uinf * (1.0)) * (1.0);
+      NekDouble norm = 1.0;
+      NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
       nu_R = n_L * (ub);
     }
 
