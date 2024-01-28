@@ -43,19 +43,25 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     NekDouble n_R = Bwd[0][j];
     NekDouble nu_R = Bwd[1][j];
 
-    if (j == 0) {
-      // x = 0
-      n_R = n_L;
-      // nu_R = nu_L;
+    // Are we on one of the boundaries?
+    bool is_left = false;
+    bool is_right = false;
+    const int nskip = 128000;
+    const int Nreg = 1600;
+    if (j >= nskip && j < nskip + Nreg) {
+      is_left = true;
+    } else if (j >= nskip + Nreg && j < nskip + 2 * Nreg) {
+      is_right = true;
+    }
 
+    if (is_left) {
+      n_R = n_L;
       NekDouble u_L = nu_L / n_L;
       const NekDouble uinf = -1.0;
       NekDouble ub = u_L + (uinf - u_L * uinf * (-1.0)) * (-1.0);
       nu_R = n_L * (ub);
-    } else if (j == 1) {
-      // x = 2
+    } else if (is_right) {
       n_R = n_L;
-      // nu_R = nu_L;
       NekDouble u_L = nu_L / n_L;
       const NekDouble uinf = 1.0;
       NekDouble ub = u_L + (uinf - u_L * uinf * (1.0)) * (1.0);
@@ -82,18 +88,10 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     flux[1][j] = 0.5 * ((nu_L * u_L + n_L * T) + (nu_R * u_R + n_R * T) +
                         C * (nu_L - nu_R));
 
-    if (j == 0) {
+    if (is_left) {
       flux[0][j] *= -1.0;
       flux[1][j] *= -1.0;
     }
   }
-
-  /*
-  flux[0][0] = -Fwd[0][0];
-  flux[0][1] = Fwd[0][1];
-  flux[1][0] = -Fwd[1][0];
-  flux[1][1] = Fwd[1][1];
-  flux[0][0] = flux[0][1] = flux[1][0] = flux[1][1] = 0.0;
-  */
 }
 } // namespace NESO::Solvers::H3LAPD
