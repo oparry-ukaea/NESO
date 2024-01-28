@@ -22,6 +22,39 @@ void Outflow1DSystem::explicit_time_int(
     const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
     Array<OneD, Array<OneD, NekDouble>> &out_arr, const NekDouble time) {
 
+  auto bnd_exp_arr = m_fields[0]->GetBndCondExpansions();
+  auto trace_exp = m_fields[0]->GetTrace();
+  auto trace_bnd_map = m_fields[0]->GetTraceBndMap();
+  auto foo = m_fields[0]->GetTraceBndMap();
+  int region_trace_offset = 0;
+  for (auto region_id = 0; region_id < bnd_exp_arr.size(); region_id++) {
+    auto exp_list = bnd_exp_arr[region_id];
+    auto Nexp = exp_list->GetExpSize();
+    auto nBCEdgePts = exp_list->GetTotPoints();
+    std::cout << "Region " << region_id << " has:" << std::endl
+              << "  " << Nexp << " trace elements / expansions" << std::endl;
+    // std::cout << "  " << nBCEdgePts << " trace points" << std::endl;
+
+    // for (auto exp_idx = 0; exp_idx < Nexp; exp_idx++) {
+
+    //   auto idx_in_bnd_exp = exp_list->GetPhys_Offset(exp_idx);
+    //   auto idx_in_trace_arr = trace_exp->GetPhys_Offset(
+    //       trace_bnd_map[region_trace_offset + exp_idx]);
+    //   // std::cout << "  Exp " << exp_idx
+    //   //           << " has bndexp offset = " << idx_in_bnd_exp
+    //   //           << " and trace arr offset " << idx_in_trace_arr <<
+    //   std::endl;
+    // }
+    int region_first_idx_in_trace_arr =
+        trace_exp->GetPhys_Offset(trace_bnd_map[region_trace_offset]);
+    int region_last_idx_in_trace_arr =
+        region_first_idx_in_trace_arr + nBCEdgePts;
+    std::cout << "  and has indices " << region_first_idx_in_trace_arr << " to "
+              << region_last_idx_in_trace_arr << " in the trace arr"
+              << std::endl;
+    region_trace_offset += Nexp;
+  }
+
   // Check in_arr for NaNs
   for (auto &var : {"ne", "Ge"}) {
     auto fidx = m_field_to_index.get_idx(var);
