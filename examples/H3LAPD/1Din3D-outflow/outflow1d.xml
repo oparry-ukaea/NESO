@@ -61,7 +61,6 @@
                 <D VAR="ne"  VALUE="1/delta" />
                 <D VAR="Ge"  VALUE="1" />
             </REGION>
-
         </BOUNDARYCONDITIONS>
         <FUNCTION NAME="InitialConditions">
             <E VAR="ne"  DOMAIN="0" VALUE="0.5*((delta+1/delta)+sqrt((delta+1/delta)^2-4*(z-1)*(z-1)))" />
