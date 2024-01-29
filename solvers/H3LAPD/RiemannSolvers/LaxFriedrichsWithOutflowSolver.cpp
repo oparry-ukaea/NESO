@@ -46,8 +46,8 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     // Are we on one of the boundaries?
     bool is_left = false;
     bool is_right = false;
-    const int nskip = 128000;
-    const int Nreg = 1600;
+    const int nskip = 0;
+    const int Nreg = 1024;
     if (j >= nskip && j < nskip + Nreg) {
       is_left = true;
     } else if (j >= nskip + Nreg && j < nskip + 2 * Nreg) {
