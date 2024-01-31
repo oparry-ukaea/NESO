@@ -54,9 +54,25 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     if (j == 0) {
       // x = 0
       n_R = n_L;
+      //// ORIG
+      // const NekDouble uinf = -m_delta;
+      // NekDouble norm = -1.0;
+      // NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
+      //// INUITIVE - FAILS
+      // const NekDouble uinf = m_delta;
+      // NekDouble norm = -1.0;
+      // NekDouble ub = u_L + (uinf - u_L * norm) * norm;
+
+      //// ORIG REPHRASED
       const NekDouble uinf = -m_delta;
+      NekDouble ub;
       NekDouble norm = -1.0;
-      NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
+      if (m_delta >= 1) {
+        ub = 2 * u_L - uinf;
+      } else {
+        ub = 0.5 * (u_L + uinf);
+      }
+
       nu_R = n_L * (ub);
       std::cout << "  uinf    = " << uinf << std::endl;
       std::cout << "  norm    = " << norm << std::endl;
@@ -68,7 +84,17 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       n_R = n_L;
       const NekDouble uinf = m_delta;
       NekDouble norm = 1.0;
-      NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
+      //// ORIG
+      // NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
+      //// INTUITIVE (works out the same)
+      // NekDouble ub = u_L + (uinf - u_L * norm) * norm;
+      //// ORIG REPHRASED
+      NekDouble ub;
+      if (m_delta >= 1) {
+        ub = u_L + uinf - u_L * uinf;
+      } else {
+        ub = 0.5 * (u_L + uinf);
+      }
       nu_R = n_L * (ub);
       std::cout << "  uinf    = " << uinf << std::endl;
       std::cout << "  norm    = " << norm << std::endl;
@@ -101,11 +127,11 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       flux[1][j] *= -1.0;
     }
 
-    if (j < 2) {
-      std::cout << "  Fn =" << flux[0][j] << std::endl
-                << "  Fp =" << flux[1][j] << std::endl
-                << std::endl;
-    }
+    // if (j < 2) {
+    //   std::cout << "  Fn =" << flux[0][j] << std::endl
+    //             << "  Fp =" << flux[1][j] << std::endl
+    //             << std::endl;
+    // }
   }
 
   /*
