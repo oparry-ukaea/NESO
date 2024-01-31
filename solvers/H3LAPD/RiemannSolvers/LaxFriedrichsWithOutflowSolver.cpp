@@ -46,6 +46,10 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     NekDouble nu_R = Bwd[1][j];
     NekDouble u_L = nu_L / n_L;
 
+    if (j < 2) {
+      std::cout << "j=" << j << std::endl;
+    }
+
     // Override R conditions for boundaries
     if (j == 0) {
       // x = 0
@@ -54,14 +58,25 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       NekDouble norm = -1.0;
       NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
       nu_R = n_L * (ub);
+      std::cout << "  uinf    = " << uinf << std::endl;
+      std::cout << "  norm    = " << norm << std::endl;
+      std::cout << "  ub      = " << ub << std::endl;
+      std::cout << "  n_L/n_R = " << n_L << std::endl;
+      std::cout << "  u_L     = " << u_L << std::endl;
+      std::cout << "  nu_R    = " << nu_R << std::endl;
     } else if (j == 1) {
       n_R = n_L;
       const NekDouble uinf = m_delta;
       NekDouble norm = 1.0;
       NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
       nu_R = n_L * (ub);
+      std::cout << "  uinf    = " << uinf << std::endl;
+      std::cout << "  norm    = " << norm << std::endl;
+      std::cout << "  ub      = " << ub << std::endl;
+      std::cout << "  n_L/n_R = " << n_L << std::endl;
+      std::cout << "  u_L     = " << u_L << std::endl;
+      std::cout << "  nu_R    = " << nu_R << std::endl;
     }
-
     // Velocity
     NekDouble u_R = nu_R / n_R;
 
@@ -87,10 +102,9 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
     }
 
     if (j < 2) {
-      std::cout << "j=" << j << std::endl
-                << "  Fn=" << flux[0][j] << std::endl
-                << "  Fp=" << flux[1][j] << std::endl;
-      std::cout << "" << std::endl;
+      std::cout << "  Fn =" << flux[0][j] << std::endl
+                << "  Fp =" << flux[1][j] << std::endl
+                << std::endl;
     }
   }
 
