@@ -58,8 +58,8 @@
 
         </BOUNDARYCONDITIONS>
         <FUNCTION NAME="InitialConditions">
-            <!-- <E VAR="ne"  DOMAIN="0" VALUE="1/delta+exp(-(x-1)*(x-1)/0.1/0.1)" /> -->
-            <E VAR="ne"  DOMAIN="0" VALUE="(delta+1/delta+sqrt((delta+1/delta)^2-4*(x-1)^2))/2.0" />
+            <E VAR="ne"  DOMAIN="0" VALUE="1/delta+exp(-(x-1)*(x-1)/0.1/0.1)" />
+            <!-- <E VAR="ne"  DOMAIN="0" VALUE="(delta+1/delta+sqrt((delta+1/delta)^2-4*(x-1)^2))/2.0" /> -->
             <E VAR="Ge"  DOMAIN="0" VALUE="(x-1)" />
         </FUNCTION>
         <FUNCTION NAME="dens_src">
