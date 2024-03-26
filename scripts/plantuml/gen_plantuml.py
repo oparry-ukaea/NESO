@@ -56,15 +56,17 @@ def main(solver="H3LAPD", **edit_kws):
     diag_str = gen_diag_str(header_paths, **diagram_kwargs)
     diag_str = edit_diag(diag_str, **edit_kws)
 
-    # Write the diagram string to file
-    # Using the string directly with pl.processes doesn't seem to work...
-    puml_path = os.path.join(get_this_dir_path(), f"{solver}.puml")
-    write_puml(diag_str, puml_path)
-
     # Generate the png from the diagram file
     pl = plantuml.PlantUML("http://www.plantuml.com/plantuml/img/")
     png_path = os.path.join(get_this_dir_path(), f"{solver}.png")
-    pl.processes_file(puml_path, outfile=png_path)
+
+    try:
+        png_content = pl.processes(diag_str)
+        with open(png_path, "wb") as fh:
+            fh.write(png_content)
+    except plantuml.PlantUMLHTTPError as e:
+        print("Failed to generate png:")
+        print(e)
 
 
 main(skip_access=["private"])
