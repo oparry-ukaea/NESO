@@ -59,6 +59,15 @@ void HWSystem::v_GenerateSummary(SU::SummaryList &s) {
   DriftReducedSystem::v_GenerateSummary(s);
   SU::AddSummaryItem(s, "HW alpha", m_alpha);
   SU::AddSummaryItem(s, "HW kappa", m_kappa);
+
+  if (m_session->DefinesParameter("zmax") &&
+      m_session->DefinesParameter("rho_s0")) {
+    NekDouble zmax, rho_s0;
+    m_session->LoadParameter("zmax", zmax);
+    m_session->LoadParameter("rho_s0", rho_s0);
+    NekDouble k = 2 * M_PI / (zmax * rho_s0);
+    SU::AddSummaryItem(s, "HW alpha 2D equiva.", m_alpha * std::pow(k, 2));
+  }
 }
 
 /**
