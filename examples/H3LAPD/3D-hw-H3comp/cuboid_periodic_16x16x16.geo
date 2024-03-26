@@ -1,8 +1,8 @@
 //=============================== Parameters ==================================
 // Lengths and resolutions in each dimension
 one_over_rho_s0 = 773.7422539156483;
-xsize = 16.3e-3*one_over_rho_s0;
-ysize = 16.3e-3*one_over_rho_s0;
+xsize = 18.2e-3*one_over_rho_s0;
+ysize = 18.2e-3*one_over_rho_s0;
 zsize = 10.0*one_over_rho_s0;
 nx = 16;
 ny = 16;
