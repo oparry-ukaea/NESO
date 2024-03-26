@@ -108,9 +108,18 @@ protected:
   virtual void
   get_phi_solve_rhs(const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
                     Array<OneD, NekDouble> &rhs) = 0;
+
+  void get_scaled_coords(Array<OneD, Array<OneD, NekDouble>> &coords);
+
   virtual void load_params();
+  void mixmode(const Array<OneD, NekDouble> &xarr,
+               Array<OneD, NekDouble> &result, int n_modes);
+  void set_mixed_mode_ICs(const double &scale, const int &n_modes,
+                          const int &peak_mode);
   void solve_phi(const Array<OneD, const Array<OneD, NekDouble>> &in_arr);
 
+  void v_SetInitialConditions(NekDouble initialtime, bool dumpInitialConditions,
+                              const int domain);
   virtual void v_GenerateSummary(SU::SummaryList &s) override;
   virtual void v_InitObject(bool DeclareField) override;
   virtual bool v_PostIntegrate(int step) override;
@@ -165,6 +174,8 @@ private:
   void
   get_flux_vector_vort(const Array<OneD, Array<OneD, NekDouble>> &fields_vals,
                        Array<OneD, Array<OneD, Array<OneD, NekDouble>>> &flux);
+
+  void get_phases(std::vector<NekDouble> &phases, int n_modes);
 
   void validate_fields();
 };

@@ -2,6 +2,10 @@
 #include <LibUtilities/TimeIntegration/TimeIntegrationScheme.h>
 #include <boost/core/ignore_unused.hpp>
 
+#include <cmath>
+#include <mpi.h>
+#include <random>
+
 #include "DriftReducedSystem.hpp"
 
 namespace NESO::Solvers::H3LAPD {
@@ -334,6 +338,132 @@ void DriftReducedSystem::load_params() {
   }
 }
 
+void DriftReducedSystem::get_scaled_coords(
+    Array<OneD, Array<OneD, NekDouble>> &coords) {
+  int nPts = GetNpoints();
+  ASSERTL1(
+      coords.size() == 3,
+      "get_scaled_coords: supplied coord array doesn't have 3 dimensions.");
+  ASSERTL1(coords[0].size() == nPts,
+           "get_scaled_coords: supplied coord array doesn't have the right "
+           "number of points.");
+
+  // Local mesh extent
+  auto vertices = m_graph->GetAllPointGeoms();
+  double origin[3];
+  double extent[3];
+  for (int dimx = 0; dimx < 3; dimx++) {
+    origin[dimx] = std::numeric_limits<double>::max();
+    extent[dimx] = std::numeric_limits<double>::min();
+  }
+
+  for (auto &vx : vertices) {
+    Nektar::NekDouble x, y, z;
+    vx.second->GetCoords(x, y, z);
+    origin[0] = std::min(origin[0], x);
+    origin[1] = std::min(origin[1], y);
+    origin[2] = std::min(origin[2], z);
+    extent[0] = std::max(extent[0], x);
+    extent[1] = std::max(extent[1], y);
+    extent[2] = std::max(extent[2], z);
+  }
+
+  // Global mesh extent
+  NekDouble global_origin[3];
+  NekDouble global_extent[3];
+  MPICHK(MPI_Allreduce(origin, global_origin, 3, MPI_DOUBLE, MPI_MIN,
+                       MPI_COMM_WORLD));
+  MPICHK(MPI_Allreduce(extent, global_extent, 3, MPI_DOUBLE, MPI_MAX,
+                       MPI_COMM_WORLD));
+
+  // Scale coords
+  // x between 0 and 1; y, z between 0 and 2pi
+  for (int dim = 0; dim < 3; dim++) {
+    NekDouble scale;
+    if (dim == 0) {
+      scale = 1.0;
+    } else {
+      scale = 2 * M_PI;
+    }
+    global_extent[dim] -= global_origin[dim];
+    Vmath::Sadd(nPts, -1 * global_origin[dim], coords[dim], 1, coords[dim], 1);
+    Vmath::Smul(nPts, scale / global_extent[dim], coords[dim], 1, coords[dim],
+                1);
+  }
+}
+
+double eval_mode(double x, int mode, double phase) {
+  double prefac = 1.0 / (1.0 + std::abs(mode - 4.0));
+  return prefac * prefac * std::cos(mode * x + phase);
+}
+
+void DriftReducedSystem::get_phases(std::vector<NekDouble> &phases,
+                                    int n_modes) {
+  auto comm = m_session->GetComm();
+  if (m_session->GetComm()->TreatAsRankZero()) {
+    int seed = 1;
+    // Generator
+    std::mt19937 rng(seed);
+    // Distribution: uniform on [-pi, +pi]
+    std::uniform_real_distribution<double> dist(-M_PI, M_PI);
+
+    for (int imode = 0; imode < n_modes; imode++) {
+      phases[imode] = dist(rng);
+    }
+    comm->Bcast(phases, 0);
+  } else {
+    comm->Bcast(phases, 0);
+  }
+}
+
+void DriftReducedSystem::mixmode(const Array<OneD, NekDouble> &xarr,
+                                 Array<OneD, NekDouble> &result, int n_modes) {
+  // Set phases on root and broadcast to other ranks
+  std::vector<NekDouble> phases(n_modes);
+  get_phases(phases, n_modes);
+
+  Vmath::Zero(result.size(), result, 1);
+  for (int iPt = 0; iPt < xarr.size(); iPt++) {
+    for (int imode = 0; imode < n_modes; imode++) {
+      result[iPt] += eval_mode(xarr[iPt], imode, phases[imode]);
+    }
+  }
+}
+
+void DriftReducedSystem::set_mixed_mode_ICs(const double &scale,
+                                            const int &n_modes,
+                                            const int &peak_mode) {
+  int nPts = GetNpoints();
+  // Get scaled coords
+  Array<OneD, Array<OneD, NekDouble>> coords(3);
+  for (auto ii = 0; ii < coords.size(); ii++) {
+    coords[ii] = Array<OneD, NekDouble>(nPts);
+  }
+  m_fields[0]->GetCoords(coords[0], coords[1], coords[2]);
+  get_scaled_coords(coords);
+
+  // Compute 2*PI*x and y-z
+  Array<OneD, NekDouble> twoPIx(nPts), yminusz(nPts);
+  Vmath::Smul(nPts, 2 * M_PI, coords[0], 1, twoPIx, 1);
+  Vmath::Vsub(nPts, coords[1], 1, coords[2], 1, yminusz, 1);
+
+  std::vector<std::string> mixed_mode_vars = {"w"};
+  for (auto &var : mixed_mode_vars) {
+    int var_idx = m_field_to_index.get_idx(var);
+    // Get non-const ref to var phys vals
+    auto phys_vals = m_fields[var_idx]->UpdatePhys();
+
+    // Set phys vals = scale * mixmode(2*pi*x) * mixmode(z - y)
+    Array<OneD, NekDouble> term1(nPts), term2(nPts);
+    mixmode(twoPIx, term1, n_modes);
+    mixmode(yminusz, term2, n_modes);
+    Vmath::Vmul(nPts, term1, 1, term2, 1, phys_vals, 1);
+    Vmath::Smul(nPts, scale, phys_vals, 1, phys_vals, 1);
+    // Update coeffs
+    m_fields[var_idx]->FwdTrans(phys_vals, m_fields[var_idx]->UpdateCoeffs());
+  }
+}
+
 /**
  * @brief Utility function to print the size of a 1D Nektar array.
  * @param arr Array to print the size of
@@ -427,6 +557,78 @@ void DriftReducedSystem::validate_fields() {
                  std::to_string(npts) +
                  ". Check NUMMODES is the same for all required fields.");
   }
+}
+
+void DriftReducedSystem::v_SetInitialConditions(NekDouble initialtime,
+                                                bool dumpInitialConditions,
+                                                const int domain) {
+
+  boost::ignore_unused(initialtime);
+
+  if (m_session->GetComm()->GetRank() == 0) {
+    cout << "Initial Conditions:" << endl;
+  }
+
+  if (m_session->DefinesFunction("InitialConditions")) {
+    GetFunction("InitialConditions")
+        ->Evaluate(m_session->GetVariables(), m_fields, m_time, domain);
+    // Enforce C0 Continutiy of initial condiiton
+    if ((m_projectionType == MultiRegions::eGalerkin) ||
+        (m_projectionType == MultiRegions::eMixed_CG_Discontinuous)) {
+      for (int i = 0; i < m_fields.size(); ++i) {
+        m_fields[i]->LocalToGlobal();
+        m_fields[i]->GlobalToLocal();
+        m_fields[i]->BwdTrans(m_fields[i]->GetCoeffs(),
+                              m_fields[i]->UpdatePhys());
+      }
+    }
+
+    if (m_session->GetComm()->GetRank() == 0) {
+
+      for (int i = 0; i < m_fields.size(); ++i) {
+        std::string varName = m_session->GetVariable(i);
+        cout << "  - Field " << varName << ": "
+             << GetFunction("InitialConditions")->Describe(varName, domain)
+             << endl;
+      }
+    }
+  } else {
+    int nq = m_fields[0]->GetNpoints();
+    for (int i = 0; i < m_fields.size(); i++) {
+      Vmath::Zero(nq, m_fields[i]->UpdatePhys(), 1);
+      m_fields[i]->SetPhysState(true);
+      Vmath::Zero(m_fields[i]->GetNcoeffs(), m_fields[i]->UpdateCoeffs(), 1);
+      if (m_session->GetComm()->GetRank() == 0) {
+        cout << "  - Field " << m_session->GetVariable(i) << ": 0 (default)"
+             << endl;
+      }
+    }
+  }
+  if (m_session->DefinesParameter("mixmode_ICs")) {
+    // Set 'mixed mode' distribution, a la BOUT++
+    //   Add <n_modes> in total
+
+    int n_modes;
+    m_session->LoadParameter("mixmode_nmodes", n_modes, 14);
+    //   Max amplitude is at <peak_mode>
+    const int peak_mode = 4;
+    const double fluctuation_scale = 0.1;
+    set_mixed_mode_ICs(fluctuation_scale, n_modes, peak_mode);
+  }
+
+  // Compute init phi
+  Array<OneD, Array<OneD, NekDouble>> phys_vals(m_fields.size());
+  int npts = GetNpoints();
+  for (auto ii = 0; ii < phys_vals.size(); ii++) {
+    phys_vals[ii] = Array<OneD, NekDouble>(npts);
+    Vmath::Vcopy(npts, m_fields[ii]->GetPhys(), 1, phys_vals[ii], 1);
+  }
+  solve_phi(phys_vals);
+
+  if (dumpInitialConditions && m_checksteps && m_nchk == 0) {
+    Checkpoint_Output(m_nchk);
+  }
+  ++m_nchk;
 }
 
 void DriftReducedSystem::v_GenerateSummary(SU::SummaryList &s) {
