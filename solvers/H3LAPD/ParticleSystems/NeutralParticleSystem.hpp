@@ -100,9 +100,6 @@ public:
         // compute the global number of particles
         m_num_particles =
             ((int64_t)num_elements_global) * m_num_particles_per_cell;
-      } else {
-        nprint("Neutral particles disabled (Neither 'num_particles_total' or "
-               "'num_particles_per_cell' are set)");
       }
     }
 

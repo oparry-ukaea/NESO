@@ -447,6 +447,14 @@ void DriftReducedSystem::v_GenerateSummary(SU::SummaryList &s) {
   tmpss << "[" << m_B[0] << "," << m_B[1] << "," << m_B[2] << "]";
   SU::AddSummaryItem(s, "B", tmpss.str());
   SU::AddSummaryItem(s, "|B|", m_Bmag);
+
+  if (m_particle_sys->m_num_particles) {
+    SU::AddSummaryItem(s, "Neutral particles", "Enabled");
+    SU::AddSummaryItem(s, "  number of macro particles",
+                       static_cast<int>(m_particle_sys->m_num_particles));
+  } else {
+    SU::AddSummaryItem(s, "Neutral particles", "Disabled");
+  }
 }
 
 /**
