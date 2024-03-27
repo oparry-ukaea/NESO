@@ -73,19 +73,26 @@ void HW3DSystem::explicit_time_int(
     }
   }
 
-  zero_out_array(out_arr);
-
-  // Solve for electrostatic potential
-  solve_phi(in_arr);
-
-  // Calculate electric field from Phi, as well as corresponding drift velocity
-  calc_E_and_adv_vels(in_arr);
-
   // Get field indices
   int npts = GetNpoints();
   int ne_idx = m_field_to_index.get_idx("ne");
   int phi_idx = m_field_to_index.get_idx("phi");
   int w_idx = m_field_to_index.get_idx("w");
+  zero_out_array(out_arr);
+
+  // Solve for electrostatic potential
+  solve_phi(in_arr);
+
+  NekDouble phi_scale_fudge;
+  m_session->LoadParameter("phi_scale_fudge", phi_scale_fudge, 1.0);
+  if (m_session->GetComm()->TreatAsRankZero()) {
+    std::cout << "phi_scale: " << phi_scale_fudge << std::endl;
+  }
+  Vmath::Smul(npts, phi_scale_fudge, m_fields[phi_idx]->GetPhys(), 1,
+              m_fields[phi_idx]->UpdatePhys(), 1);
+
+  // Calculate electric field from Phi, as well as corresponding drift velocity
+  calc_E_and_adv_vels(in_arr);
 
   // Advect ne and w (m_adv_vel_elec === m_ExB_vel for HW)
   add_adv_terms({"ne"}, m_adv_elec, m_adv_vel_elec, in_arr, out_arr, time);

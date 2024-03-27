@@ -458,6 +458,7 @@ void DriftReducedSystem::set_mixed_mode_ICs(const double &scale,
     mixmode(twoPIx, term1, n_modes);
     mixmode(yminusz, term2, n_modes);
     Vmath::Vmul(nPts, term1, 1, term2, 1, phys_vals, 1);
+    std::cout << "mixmode scale is " << scale << std::endl;
     Vmath::Smul(nPts, scale, phys_vals, 1, phys_vals, 1);
     // Update coeffs
     m_fields[var_idx]->FwdTrans(phys_vals, m_fields[var_idx]->UpdateCoeffs());
@@ -608,11 +609,14 @@ void DriftReducedSystem::v_SetInitialConditions(NekDouble initialtime,
     // Set 'mixed mode' distribution, a la BOUT++
     //   Add <n_modes> in total
 
+    NekDouble scale_fudge;
+    m_session->LoadParameter("mixmode_scale_fudge", scale_fudge, 1.0);
+
     int n_modes;
     m_session->LoadParameter("mixmode_nmodes", n_modes, 14);
     //   Max amplitude is at <peak_mode>
     const int peak_mode = 4;
-    const double fluctuation_scale = 0.1;
+    const double fluctuation_scale = 0.1 * scale_fudge;
     set_mixed_mode_ICs(fluctuation_scale, n_modes, peak_mode);
   }
 

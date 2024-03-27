@@ -53,6 +53,8 @@
             <!-- <P> growth_rates_recording_step = 1 </P> -->
             <!-- No particles -->
             <P> num_particles_total = 0 </P>
+            <P> mixmode_scale_fudge = 0.5 </P>
+            <P> phi_scale_fudge = 1/T0 </P>
         </PARAMETERS>
 
         <VARIABLES>
