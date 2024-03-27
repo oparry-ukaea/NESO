@@ -130,7 +130,7 @@ void HW3DSystem::get_flux_vector_diff(
 }
 
 /**
- * @brief Read base class params then extra params required for 2D-in-3D HW.
+ * @brief Read base class params then extra params required for 3D HW.
  */
 void HW3DSystem::load_params() {
   DriftReducedSystem::load_params();
