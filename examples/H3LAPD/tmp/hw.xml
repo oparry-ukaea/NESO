@@ -34,11 +34,11 @@
             <P> IO_InfoSteps  = NumSteps+1     </P>
             <P> IO_CheckSteps = NumSteps+1      </P>
             <!-- Magnetic field strength -->
-            <P> Bxy      = 0.6 </P>
+            <P> Bxy      = 0.9 </P>
             <!-- d22 Coeff for Helmholtz solve -->
             <P> d22      = 0.0 </P> 
             <!-- HW params -->
-            <P> HW_omega_ce = 0.1 </P>
+            <P> HW_omega_ce = 0.2 </P>
             <P> HW_nu_ei    = 1.0 </P>
             <P> HW_kappa    = 3.5 </P>
             <!-- Scaling factor for ICs -->
