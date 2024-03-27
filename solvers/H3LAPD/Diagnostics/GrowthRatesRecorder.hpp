@@ -27,6 +27,8 @@ protected:
   /// Pointer to vorticity field
   std::shared_ptr<T> m_w;
 
+  NekDouble m_mag_B;
+
   /// HW α constant
   double m_alpha;
   // Space dimension of the problem (not of the domain)
@@ -55,6 +57,8 @@ public:
     // Store recording frequency for convenience
     m_session->LoadParameter("growth_rates_recording_step", m_recording_step,
                              0);
+    // Store B field magnitude for use in energy calc
+    m_session->LoadParameter("Bxy", m_mag_B);
 
     // Store MPI rank for convenience
     m_rank = m_session->GetComm()->GetRank();
@@ -89,14 +93,19 @@ public:
     // Compute ϕ derivs, square them and add to integrand
     Array<OneD, NekDouble> xderiv(m_npts), yderiv(m_npts), zderiv(m_npts);
     m_phi->PhysDeriv(m_phi->GetPhys(), xderiv, yderiv, zderiv);
+    Vmath::Smul(m_npts, 1 / m_mag_B, xderiv, 1, xderiv, 1);
+    Vmath::Smul(m_npts, 1 / m_mag_B, yderiv, 1, yderiv, 1);
     Vmath::Vvtvp(m_npts, xderiv, 1, xderiv, 1, integrand, 1, integrand, 1);
     Vmath::Vvtvp(m_npts, yderiv, 1, yderiv, 1, integrand, 1, integrand, 1);
-    if (m_prob_ndims == 2) {
-      /* Should be ∇⊥ϕ^2, so ∂ϕ/∂z ought to be excluded in both 2D and
-       * 3D, but there's a small discrepancy in 2D without it. Energy 'leaking'
-       * into orthogonal dimension? */
-      Vmath::Vvtvp(m_npts, zderiv, 1, zderiv, 1, integrand, 1, integrand, 1);
-    }
+
+    // if (m_prob_ndims == 2) {
+    //   /* Should be ∇⊥ϕ^2, so ∂ϕ/∂z ought to be excluded in both 2D and
+    //    * 3D, but there's a small discrepancy in 2D without it. Energy
+    //    'leaking'
+    //    * into orthogonal dimension? */
+    //   Vmath::Vvtvp(m_npts, zderiv, 1, zderiv, 1, integrand, 1, integrand,
+    //   1);
+    // }
 
     return 0.5 * m_n->Integral(integrand);
   }
