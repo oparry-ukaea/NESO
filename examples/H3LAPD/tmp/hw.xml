@@ -98,8 +98,8 @@
             </REGION>
         </BOUNDARYCONDITIONS>
         <FUNCTION NAME="InitialConditions">
-            <E VAR="ne"  DOMAIN="0" VALUE="6*exp((-x*x-y*y)/(s*s))*sin(4*PI*z/10)" />
-            <E VAR="w"   DOMAIN="0" VALUE="(4*exp((-x*x-y*y)/(s*s))*(-s*s+x*x+y*y)/s^4)*sin(4*PI*z/10)" />
+            <E VAR="ne"  DOMAIN="0" VALUE="1.5*exp((-x*x-y*y)/(s*s))*sin(4*PI*z/10)" />
+            <E VAR="w"   DOMAIN="0" VALUE="(1*exp((-x*x-y*y)/(s*s))*(-s*s+x*x+y*y)/s^4)*sin(4*PI*z/10)" />
             <E VAR="phi" DOMAIN="0" VALUE="exp(-(x*x+y*y)/(s*s))*sin(4*PI*z/10)" />
         </FUNCTION>
     </CONDITIONS>
