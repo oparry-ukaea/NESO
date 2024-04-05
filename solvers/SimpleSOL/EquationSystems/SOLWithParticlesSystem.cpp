@@ -60,6 +60,52 @@ SOLWithParticlesSystem::SOLWithParticlesSystem(
       pSession->DefinesParameter("mass_recording_step");
 }
 
+/**
+ * @brief Adds particle sources.
+ * @details For each <field_name> in @p target_fields , look for another field
+ * called <field_name>_src. If it exists, add the physical values of
+ * field_name_src to the appropriate index of @p out_arr.
+ *
+ * @param target_fields list of Nektar field names for which to look for a
+ * '_src' counterpart
+ *  @param[out] out_arr      the RHS array
+ *
+ */
+void SOLWithParticlesSystem::add_particle_sources(
+    std::vector<std::string> target_fields,
+    Array<OneD, Array<OneD, NekDouble>> &out_arr) {
+  for (auto target_field : target_fields) {
+    int src_field_idx = m_field_to_index.get_idx(target_field + "_src");
+
+    if (src_field_idx >= 0) {
+      // Check that the target field is one that is time integrated
+      auto tmp_it = std::find(m_int_fld_names.cbegin(), m_int_fld_names.cend(),
+                              target_field);
+      ASSERTL0(tmp_it != m_int_fld_names.cend(),
+               "Target for particle source ['" + target_field +
+                   "'] does not appear in the list of time-integrated fields "
+                   "(m_int_fld_names).")
+      /*
+      N.B. out_arr can be smaller than m_fields if any fields aren't
+      time-integrated, so can't just use out_arr_idx =
+      m_field_to_index.get_idx(target_field)
+       */
+      auto out_arr_idx = std::distance(m_int_fld_names.cbegin(), tmp_it);
+      Vmath::Vadd(out_arr[out_arr_idx].size(), out_arr[out_arr_idx], 1,
+                  m_fields[src_field_idx]->GetPhys(), 1, out_arr[out_arr_idx],
+                  1);
+    }
+  }
+}
+
+void SOLWithParticlesSystem::DoOdeRhs(
+    const Array<OneD, const Array<OneD, NekDouble>> &inarray,
+    Array<OneD, Array<OneD, NekDouble>> &outarray, const NekDouble time) {
+  SOLSystem::DoOdeRhs(inarray, outarray, time);
+
+  add_particle_sources(m_required_flds, outarray);
+}
+
 void SOLWithParticlesSystem::UpdateTemperature() {
   // Compute initial T vals
   // N.B. GetTemperature requires field order rho,rhou,[rhov],[rhow],E
