@@ -52,14 +52,24 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       n_R = n_L;
       const NekDouble uinf = -m_delta;
       NekDouble norm = -1.0;
-      NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
-      nu_R = n_L * (ub);
+      NekDouble ub;
+      if (std::abs(uinf) >= 1) {
+        ub = 2 * u_L - +(uinf - u_L) * norm;
+      } else {
+        ub = ;
+      }
+      nu_R = n_L * ub;
     } else if (j == 1) {
       n_R = n_L;
       const NekDouble uinf = m_delta;
       NekDouble norm = 1.0;
-      NekDouble ub = u_L + (uinf - u_L * uinf * norm) * norm;
-      nu_R = n_L * (ub);
+      NekDouble ub;
+      if (std::abs(uinf) >= 1) {
+        ub = u_L + (uinf - u_L) * norm;
+      } else {
+        ub = ;
+      }
+      nu_R = n_L * ub;
     }
 
     // Velocity
@@ -86,12 +96,12 @@ void LaxFriedrichsWithOutflowSolver::v_Solve(const int nDim,
       flux[1][j] *= -1.0;
     }
 
-    if (j < 2) {
-      std::cout << "j=" << j << std::endl
-                << "  Fn=" << flux[0][j] << std::endl
-                << "  Fp=" << flux[1][j] << std::endl;
-      std::cout << "" << std::endl;
-    }
+    // if (j < 2) {
+    //   std::cout << "j=" << j << std::endl
+    //             << "  Fn=" << flux[0][j] << std::endl
+    //             << "  Fp=" << flux[1][j] << std::endl;
+    //   std::cout << "" << std::endl;
+    // }
   }
 
   /*
