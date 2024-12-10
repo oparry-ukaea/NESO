@@ -26,6 +26,7 @@ void HW2DSystem::explicit_time_int(
     const Array<OneD, const Array<OneD, NekDouble>> &in_arr,
     Array<OneD, Array<OneD, NekDouble>> &out_arr, const NekDouble time) {
 
+#ifdef NESO_DEBUG
   // Check in_arr for NaNs
   for (auto &var : {"ne", "w"}) {
     auto fidx = this->field_to_index[var];
@@ -35,6 +36,7 @@ void HW2DSystem::explicit_time_int(
       NESOASSERT(std::isfinite(in_arr[fidx][ii]), err_msg.str().c_str());
     }
   }
+#endif
 
   zero_out_array(out_arr);
 
