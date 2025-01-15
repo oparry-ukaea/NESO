@@ -6,10 +6,10 @@
 #include <nektar_interface/function_projection.hpp>
 #include <nektar_interface/particle_interface.hpp>
 #include <neso_particles.hpp>
+#include <utilities.hpp>
 
 #include <particle_utility/position_distribution.hpp>
 #include <string>
-#include <utilities.hpp>
 
 #include <LibUtilities/BasicUtils/SessionReader.h>
 
@@ -71,14 +71,14 @@ private:
 
   std::vector<std::shared_ptr<IntegratorBoris>> boris_integrators;
 
-  inline void add_particles(const std::array<double, 3>& B0) {
+  inline void add_particles(const std::array<double, 3> &B0) {
 
     long partidstart, partidend;
     const long size = this->sycl_target->comm_pair.size_parent;
     const long rank = this->sycl_target->comm_pair.rank_parent;
 
-    get_decomp_1d(size, (long)this->num_particles_per_species, rank, &partidstart,
-                  &partidend);
+    get_decomp_1d(size, (long)this->num_particles_per_species, rank,
+                  &partidstart, &partidend);
     const long npart_this_rank = partidend - partidstart;
     const int cell_count = this->domain->mesh->get_cell_count();
 
@@ -93,9 +93,7 @@ private:
 
     std::uniform_real_distribution<double> uniform01(0, 1);
 
-    double Bmag = std::sqrt(B0[0] * B0[0] +
-                            B0[1] * B0[1] +
-                            B0[2] * B0[2]);
+    double Bmag = std::sqrt(B0[0] * B0[0] + B0[1] * B0[1] + B0[2] * B0[2]);
 
     if (rank == 0) {
       std::cout << *(this->m_unitConverter) << std::endl;
@@ -105,9 +103,7 @@ private:
       std::cout << "The resolution of the electron cyclotron period is "
                 << 2 * M_PI / Bmag / this->dt << std::endl;
     }
-    std::vector<double> normbvector{B0[0] / Bmag,
-                                    B0[1] / Bmag,
-                                    B0[2] / Bmag};
+    std::vector<double> normbvector{B0[0] / Bmag, B0[1] / Bmag, B0[2] / Bmag};
     if (Bmag == 0) {
       normbvector[0] = 0.0;
       normbvector[1] = 0.0;
@@ -116,7 +112,7 @@ private:
 
     const double theta = std::acos(normbvector[2]); // acos(dot(normbvector, z))
     // u vector = cross(z, normbvector);
-    const double ux = - normbvector[1];
+    const double ux = -normbvector[1];
     const double uy = normbvector[0];
     const double uz = 0.0;
 
@@ -135,7 +131,6 @@ private:
                   r01 * (r12 * r20 - r10 * r22) +
                   r02 * (r10 * r21 - r11 * r20) - 1) < 1e-8,
         "The magnetic field rotation matrix must have a unit determinant");
-
 
     double fastestspeed = 0.0;
     if (npart_this_rank > 0) {
@@ -159,7 +154,8 @@ private:
                                  distribution_type, 0);
 
         auto positions = uniform_within_extents(
-            npart_this_rank, ndim, this->boundary_conditions[0]->global_extent, rng_phasespace);
+            npart_this_rank, ndim, this->boundary_conditions[0]->global_extent,
+            rng_phasespace);
 
         if (distribution_function == 0) {
           // 3V Maxwellian
@@ -177,17 +173,20 @@ private:
           // vth^2/2 - v (v-u) = 0
           // v^2 - vu - vth^2/2 = 0
           // (u + sqrt(u^2 + 2vth^2))/2
-          double vperp_peak = (drift_perp +
-              std::sqrt(std::pow(drift_perp, 2) +
-              2 * std::pow(thermal_velocity, 2))) / 2;
+          double vperp_peak =
+              (drift_perp + std::sqrt(std::pow(drift_perp, 2) +
+                                      2 * std::pow(thermal_velocity, 2))) /
+              2;
           for (int p = 0; p < npart_this_rank; p++) {
             // x position
             initial_distribution[Sym<REAL>("X")][p][0] =
-                positions[0][p] + this->boundary_conditions[0]->global_origin[0];
+                positions[0][p] +
+                this->boundary_conditions[0]->global_origin[0];
 
             // y position
             initial_distribution[Sym<REAL>("X")][p][1] =
-                positions[1][p] + this->boundary_conditions[0]->global_origin[1];
+                positions[1][p] +
+                this->boundary_conditions[0]->global_origin[1];
 
             // vpara, vperp thermally distributed velocities
             auto rvpara =
@@ -206,8 +205,9 @@ private:
                     std::exp(
                         -std::pow((vperp - drift_perp) / thermal_velocity, 2));
                 if (vf_eval > 1) {
-                  std::string emsg = "Error in the accept reject algorithm, f > 1 but f = "
-                    + std::to_string(vf_eval);
+                  std::string emsg =
+                      "Error in the accept reject algorithm, f > 1 but f = " +
+                      std::to_string(vf_eval);
                   NESOASSERT(vf_eval <= 1, emsg.data());
                 }
                 if (uniform01(rng_phasespace) < vf_eval) {
@@ -228,7 +228,8 @@ private:
             double vx = px / mass / gamma;
             double vy = py / mass / gamma;
             double vz = pz / mass / gamma;
-            fastestspeed = std::max(fastestspeed, std::sqrt(vx*vx + vy*vy + vz*vz));
+            fastestspeed =
+                std::max(fastestspeed, std::sqrt(vx * vx + vy * vy + vz * vz));
 
             initial_distribution[Sym<REAL>("V_OLD")][p][0] = vx;
             initial_distribution[Sym<REAL>("V_OLD")][p][1] = vy;
@@ -264,10 +265,10 @@ private:
       } // for loop over species
       double globalfastestspeed;
       MPI_Reduce(&fastestspeed, &globalfastestspeed, 1, MPI_DOUBLE, MPI_MAX, 0,
-        MPI_COMM_WORLD);
+                 MPI_COMM_WORLD);
       if (rank == 0) {
-        std::cout << "The fastest speed of any particle is " <<
-          globalfastestspeed << std::endl;
+        std::cout << "The fastest speed of any particle is "
+                  << globalfastestspeed << std::endl;
       }
     }
 
@@ -323,9 +324,9 @@ public:
   /// NESO-Particles ParticleGroup containing charged particles: one per species
   std::vector<ParticleGroupSharedPtr> particle_groups;
   /// Method to apply particle boundary conditions.
-  std::vector<std::shared_ptr<NektarCartesianPeriodic> > boundary_conditions;
+  std::vector<std::shared_ptr<NektarCartesianPeriodic>> boundary_conditions;
   /// Method to map to/from nektar geometry ids to 0,N-1 used by NESO-Particles
-  std::vector<std::shared_ptr<CellIDTranslation> > cell_id_translations;
+  std::vector<std::shared_ptr<CellIDTranslation>> cell_id_translations;
   /// Trajectory writer for particles.
   std::vector<std::shared_ptr<H5Part>> h5parts;
   /// A helper class to convert SI units to simulation units and back
@@ -413,20 +414,20 @@ public:
         ParticleProp(Sym<REAL>("X"), 2, true), // position
         ParticleProp(Sym<INT>("CELL_ID"), 1, true),
         ParticleProp(Sym<INT>("PARTICLE_ID"), 1),
-        ParticleProp(Sym<INT>("Q"), 1),   // charge
-        ParticleProp(Sym<INT>("M"), 1),   // mass
-        ParticleProp(Sym<REAL>("W"), 1),   // weight
-        ParticleProp(Sym<REAL>("V"), 3),   // velocity
-        ParticleProp(Sym<REAL>("V_OLD"), 3),   // old velocity
-        ParticleProp(Sym<REAL>("phi"), 1), // phi field
-        ParticleProp(Sym<REAL>("A"), 3),   // A field
+        ParticleProp(Sym<INT>("Q"), 1),       // charge
+        ParticleProp(Sym<INT>("M"), 1),       // mass
+        ParticleProp(Sym<REAL>("W"), 1),      // weight
+        ParticleProp(Sym<REAL>("V"), 3),      // velocity
+        ParticleProp(Sym<REAL>("V_OLD"), 3),  // old velocity
+        ParticleProp(Sym<REAL>("phi"), 1),    // phi field
+        ParticleProp(Sym<REAL>("A"), 3),      // A field
         ParticleProp(Sym<REAL>("GradAx"), 2), //
         ParticleProp(Sym<REAL>("GradAy"), 2), //
         ParticleProp(Sym<REAL>("GradAz"), 2), //
-        ParticleProp(Sym<REAL>("B"), 3),   // B field - for diagnostics
-        ParticleProp(Sym<REAL>("E"), 3),   // E field
-        ParticleProp(Sym<REAL>("WQ"), 1),  // weight * charge
-        ParticleProp(Sym<REAL>("WQV"), 3)  // weight * charge * velocity
+        ParticleProp(Sym<REAL>("B"), 3),      // B field - for diagnostics
+        ParticleProp(Sym<REAL>("E"), 3),      // E field
+        ParticleProp(Sym<REAL>("WQ"), 1),     // weight * charge
+        ParticleProp(Sym<REAL>("WQV"), 3)     // weight * charge * velocity
     };
 
     this->session->LoadParameter("number_of_particle_species",
@@ -440,17 +441,18 @@ public:
       this->particle_groups.push_back(pg);
 
       // Setup PBC boundary conditions.
-      this->boundary_conditions.push_back(std::make_shared<NektarCartesianPeriodic>(
-        this->sycl_target, this->graph, pg->position_dat)); // should come from ParticleSpec
+      this->boundary_conditions.push_back(
+          std::make_shared<NektarCartesianPeriodic>(
+              this->sycl_target, this->graph,
+              pg->position_dat)); // should come from ParticleSpec
 
       // Setup map between cell indices. Assume all groups have same cell_id_dat
       this->cell_id_translations.push_back(std::make_shared<CellIDTranslation>(
-        this->sycl_target, pg->cell_id_dat, this->particle_mesh_interface));
-
+          this->sycl_target, pg->cell_id_dat, this->particle_mesh_interface));
     }
 
     this->volume_nounits = this->boundary_conditions[0]->global_extent[0] *
-                                  this->boundary_conditions[0]->global_extent[1];
+                           this->boundary_conditions[0]->global_extent[1];
 
     if (rank == 0) {
       std::cout << "The volume of the mesh in dimensionless units = "
@@ -475,7 +477,8 @@ public:
                                    temperature);
 
       double driftenergy = 0.0;
-      this->session->LoadParameter("driftenergy_" + species_string, driftenergy);
+      this->session->LoadParameter("driftenergy_" + species_string,
+                                   driftenergy);
       double pitch = 1.0;
       this->session->LoadParameter("pitch_" + species_string, pitch);
 
@@ -496,32 +499,42 @@ public:
         std::cout << "Weight in dimensionless units is " << weight << std::endl;
       }
 
-      ParticleInitialConditions pic = {
-          charge, mass, temperature, driftenergy, pitch, number_density, weight};
+      ParticleInitialConditions pic = {charge,      mass,  temperature,
+                                       driftenergy, pitch, number_density,
+                                       weight};
 
       this->particle_initial_conditions.emplace_back(pic);
     }
 
-    const auto totalChargeDensity = total_charge_density(this->particle_initial_conditions);
-    const auto totalDensity = total_number_density(this->particle_initial_conditions);
-    const auto chargeErrorMessage = "The plasma must be neutral, but it is " +
-      std::to_string(totalChargeDensity / totalDensity);
-    ASSERTL1(std::abs(totalChargeDensity) < 1e-14 * totalDensity, chargeErrorMessage);
-    const auto totalParallelCurrent = total_parallel_current_density(
-        this->particle_initial_conditions);
+    const auto totalChargeDensity =
+        total_charge_density(this->particle_initial_conditions);
+    const auto totalDensity =
+        total_number_density(this->particle_initial_conditions);
+    const auto chargeErrorMessage =
+        "The plasma must be neutral, but it is " +
+        std::to_string(totalChargeDensity / totalDensity);
+    ASSERTL1(std::abs(totalChargeDensity) < 1e-14 * totalDensity,
+             chargeErrorMessage);
+    const auto totalParallelCurrent =
+        total_parallel_current_density(this->particle_initial_conditions);
     int stpcos = -1; //
-    this->session->LoadParameter("subtract_total_parallel_current_off_species", stpcos, -1);
+    this->session->LoadParameter("subtract_total_parallel_current_off_species",
+                                 stpcos, -1);
     if ((stpcos >= 0) && (stpcos <= this->num_species)) {
-      auto& icToChange = this->particle_initial_conditions[stpcos];
-      NESOASSERT(icToChange.driftenergy == 0.0, "The driftenergy have started as 0");
-      auto velocity = - totalParallelCurrent / icToChange.charge / icToChange.number_density;
+      auto &icToChange = this->particle_initial_conditions[stpcos];
+      NESOASSERT(icToChange.driftenergy == 0.0,
+                 "The driftenergy have started as 0");
+      auto velocity =
+          -totalParallelCurrent / icToChange.charge / icToChange.number_density;
       if (std::isfinite(velocity)) {
         icToChange.pitch = sgn(velocity);
         icToChange.driftenergy = 0.5 * icToChange.mass * std::pow(velocity, 2);
         if (rank == 0) {
-          std::cout << "To offset current, the driftenergy energy of species " << stpcos <<
-            " is " << icToChange.driftenergy << " with pitch " << icToChange.pitch <<
-            " , whereas the temperature is " << icToChange.temperature << std::endl;
+          std::cout << "To offset current, the driftenergy energy of species "
+                    << stpcos << " is " << icToChange.driftenergy
+                    << " with pitch " << icToChange.pitch
+                    << " , whereas the temperature is "
+                    << icToChange.temperature << std::endl;
         }
       }
     }
@@ -535,17 +548,17 @@ public:
 
     for (std::size_t s = 0; s < this->num_species; ++s) {
       auto pg = this->particle_groups[s];
-      this->boris_integrators.emplace_back(std::make_shared<IntegratorBoris>(
-          pg, this->dt, B0));
+      this->boris_integrators.emplace_back(
+          std::make_shared<IntegratorBoris>(pg, this->dt, B0));
 
       std::string filename = "MaxwellWave2D3V_particle_trajectory_" +
-        std::to_string(s) + ".h5part";
+                             std::to_string(s) + ".h5part";
       auto h5part = std::make_shared<H5Part>(
-                 filename, this->particle_groups[s], Sym<REAL>("X"),
-                 Sym<INT>("CELL_ID"), Sym<REAL>("V"), Sym<REAL>("E"), Sym<INT>("Q"),
-                 Sym<INT>("M"), Sym<REAL>("B"), Sym<INT>("NESO_MPI_RANK"),
-                 Sym<REAL>("GradAx"), Sym<REAL>("GradAy"), Sym<REAL>("GradAz"),
-                 Sym<INT>("PARTICLE_ID"), Sym<REAL>("NESO_REFERENCE_POSITIONS"));
+          filename, this->particle_groups[s], Sym<REAL>("X"),
+          Sym<INT>("CELL_ID"), Sym<REAL>("V"), Sym<REAL>("E"), Sym<INT>("Q"),
+          Sym<INT>("M"), Sym<REAL>("B"), Sym<INT>("NESO_MPI_RANK"),
+          Sym<REAL>("GradAx"), Sym<REAL>("GradAy"), Sym<REAL>("GradAz"),
+          Sym<INT>("PARTICLE_ID"), Sym<REAL>("NESO_REFERENCE_POSITIONS"));
       this->h5parts.push_back(h5part);
     }
   };
