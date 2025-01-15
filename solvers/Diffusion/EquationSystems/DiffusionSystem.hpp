@@ -8,11 +8,13 @@
 #include "nektar_interface/solver_base/time_evolved_eqnsys_base.hpp"
 
 namespace LU = Nektar::LibUtilities;
+namespace NC = Nektar::Collections;
 namespace SD = Nektar::SpatialDomains;
 namespace SR = Nektar::StdRegions;
 namespace SU = Nektar::SolverUtils;
 
 namespace NESO::Solvers::Diffusion {
+
 class DiffusionSystem
     : public TimeEvoEqnSysBase<SU::UnsteadySystem, Particles::EmptyPartSys> {
 public:
@@ -40,6 +42,17 @@ protected:
   /// Diffusion coefficient of SVV modes
   NekDouble sVV_diff_coeff;
 
+  /// User-supplied parameters used to set Helmsolve factors/variable coeffs
+  NekDouble epsilon;
+  NekDouble k_perp;
+  NekDouble k_par;
+  NekDouble n;
+  NekDouble theta;
+
+  /// Factors and variable coefficients for Helmsolve
+  SR::ConstFactorMap helmsolve_factors;
+  SR::VarCoeffMap helmsolve_varcoeffs;
+
   DiffusionSystem(const LU::SessionReaderSharedPtr &session,
                   const SD::MeshGraphSharedPtr &graph);
 
@@ -55,17 +68,9 @@ protected:
                     Array<OneD, Array<OneD, NekDouble>> &out_arr,
                     NekDouble time, NekDouble lambda);
 
-private:
-  /// User-supplied parameters used to set Helmsolve factors/variable coeffs
-  NekDouble epsilon;
-  NekDouble k_perp;
-  NekDouble k_par;
-  NekDouble n;
-  NekDouble theta;
-
-  /// Factors and variable coefficients for Helmsolve
-  SR::ConstFactorMap helmsolve_factors;
-  SR::VarCoeffMap helmsolve_varcoeffs;
+  NC::ImplementationType get_collection_type();
+  virtual void load_params() override;
+  void setup_helmsolve_coeffs();
 };
 } // namespace NESO::Solvers::Diffusion
 
