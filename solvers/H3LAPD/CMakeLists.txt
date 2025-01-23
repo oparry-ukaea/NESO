@@ -16,8 +16,9 @@ set(SOLVER_LIBS
     CACHE INTERNAL "")
 add_library(${LIBRARY_NAME} OBJECT ${H3LAPD_SRC_FILES})
 target_compile_options(${LIBRARY_NAME} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
-target_link_libraries(${LIBRARY_NAME} PRIVATE Nektar++::nektar++
-                                              NESO-Particles::NESO-Particles)
+target_link_libraries(
+  ${LIBRARY_NAME} PRIVATE Nektar++::nektar++ NESO-Particles::NESO-Particles
+                          ${NESO_LIBRARY_NAME})
 # Top-level include dir for nektar-interface headers
 set(TOPLEVEL_INCLUDE_DIR "${INC_DIR}")
 target_include_directories(${LIBRARY_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}
