@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 #
 # Script to convert a gmsh .geo file to a Nektar++ xml mesh.
 # Requires gmsh and NekMesh.
