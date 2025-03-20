@@ -1,0 +1,63 @@
+@startuml
+
+/' Objects '/
+namespace NESO {
+	namespace Solvers {
+		class EqnSysBase <template<typename NEKEQNSYS, typename PARTSYS>> {
+			#EqnSysBase(const SessionReader& session, const MeshGraph& graph)
+			#particles_enabled : bool
+			#particle_sys : shared_ptr<PARTSYS>
+			#required_fld_names : vector<string>
+			#load_params() : void
+			#validate_fields() : void
+		}
+
+		class TimeEvoEqnSysBase <template<typename NEKEQNSYS, typename PARTSYS>> {
+			#TimeEvoEqnSysBase(const SessionReader& session, const MeshGraph& graph)
+			#int_fld_names : vector<string>
+			#load_params() : void
+		}
+
+		namespace MyFluidSystem {
+			class MyFluidSystem {
+				#MyFluidSystem(const SessionReader& session, const MeshGraph& graph)
+				+~MyFluidSystem()
+				#do_explicit_solve(const NekArrConstArr& in_arr, NekArrArr& out_arr, double time, double lambda) : void
+				#do_implicit_solve(const NekArrConstArr& in_arr, NekArrArr& out_arr, double time, double lambda) : void
+				#do_ode_projection(const NekArrConstArr& in_arr, NekArrArr& out_arr, const double time) : void
+			}
+		}
+	}
+
+	namespace Particles {
+		abstract class PartSysBase {
+			#PartSysBase(const ParticleReader session, const MeshGraph graph, MPI_Comm comm)
+			+particle_group : ParticleGroup
+			#particle_mesh_interface : ParticleMeshInterface
+			#config : ParticleReader
+			+particle_spec : ParticleSpec
+			#graph : MeshGraph
+			#load_params() : void
+		}
+
+			namespace MyParticleSystem {
+			class MyParticleSystem {
+				#MyParticleSystem(const ParticleReader session, const MeshGraph graph, MPI_Comm comm)
+			#integrate() : void
+			#setup_evaluate() : void
+			#setup_project() : void
+			}
+		}
+
+	}
+}
+
+/' Inheritance relationships '/
+NESO.Solvers.EqnSysBase <|-- NESO.Solvers.TimeEvoEqnSysBase
+NESO.Solvers.TimeEvoEqnSysBase <|-- NESO.Solvers.MyFluidSystem.MyFluidSystem
+NESO.Particles.PartSysBase <|-- NESO.Particles.MyParticleSystem
+
+/' Aggregation relationships '/
+NESO.Solvers.EqnSysBase o-- NESO.Particles.MyParticleSystem
+
+@enduml

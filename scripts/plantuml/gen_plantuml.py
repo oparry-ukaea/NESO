@@ -152,36 +152,37 @@ def gen_diagram_from_puml(puml_path, output_base):
 
 
 # gen_solver_diagram(skip_access=["private"])
-gen_base_classes_diagram(
-    skip_access=["private"],
-    skip_member_vars=[
-        "options",
-        "zero_array_of_arrays",
-        "v_DoInitialise",
-        "v_DoSolve",
-        "v_GenerateSummary",
-        "v_InitObject",
-        "cell_id_translation",
-        "h5part",
-        "nektar_graph_local_mapper",
-    ],
-    skip_headers=["empty_partsys", "particle_reader"],
-    skip_relationships=[],
-    skip_static=True,
-    replace_strs={
-        "SharedPtr": "",
-        "NESO.Particles.PartSysBase *-- NESO.Particles.PartSysOptions": "NESO.Solvers.EqnSysBase o-- NESO.Particles.PartSysBase",
-        "Array<OneD, Array<OneD, NekDouble>>": "NekArrArr",
-        "Array<OneD, const Array<OneD, NekDouble>>": "NekArrConstArr",
-        "LU::": "",
-        "NESO::": "",
-        "SD::": "",
-        "std::": "",
-        "\t\tclass PartSysOptions {\n\t\t\t+extend_halos_offset : int\n\t\t}": "",
-        "NekDouble": "double",
-    },
-)
-
-# gen_diagram_from_puml(
-#     "/home/oparry/code/NESO/scripts/plantuml/base_classes.puml", "base_classes"
+# gen_base_classes_diagram(
+#     skip_access=["private"],
+#     skip_member_vars=[
+#         "options",
+#         "zero_array_of_arrays",
+#         "v_DoInitialise",
+#         "v_DoSolve",
+#         "v_GenerateSummary",
+#         "v_InitObject",
+#         "cell_id_translation",
+#         "h5part",
+#         "nektar_graph_local_mapper",
+#     ],
+#     skip_headers=["empty_partsys", "particle_reader"],
+#     skip_relationships=[],
+#     skip_static=True,
+#     replace_strs={
+#         "SharedPtr": "",
+#         "NESO.Particles.PartSysBase *-- NESO.Particles.PartSysOptions": "NESO.Solvers.EqnSysBase o-- NESO.Particles.PartSysBase",
+#         "Array<OneD, Array<OneD, NekDouble>>": "NekArrArr",
+#         "Array<OneD, const Array<OneD, NekDouble>>": "NekArrConstArr",
+#         "LU::": "",
+#         "NESO::": "",
+#         "SD::": "",
+#         "std::": "",
+#         "\t\tclass PartSysOptions {\n\t\t\t+extend_halos_offset : int\n\t\t}": "",
+#         "NekDouble": "double",
+#     },
 # )
+
+gen_diagram_from_puml(
+    "/home/oparry/code/NESO/scripts/plantuml/NESO_talk_base_classes.puml",
+    "NESO_talk_base_classes",
+)
