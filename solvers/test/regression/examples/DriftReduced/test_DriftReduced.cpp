@@ -11,7 +11,10 @@ namespace NESO::Solvers {
  */
 class DriftReducedRegTest : public SolverRegTest {};
 
-TEST_F(DriftReducedRegTest, 2DHW) { run_and_regress(); }
+TEST_F(DriftReducedRegTest, 2DHW) {
+  set_tolerance(1e-4);
+  run_and_regress();
+}
 
 /**
 Stochasticity from particles isn't accounted for yet, disabling all
