@@ -274,7 +274,7 @@ export  LD_LIBRARY_PATH=/usr/local/software/intel/oneapi/2022.1/compiler/latest/
 
 ## Testing
 
-CMake also builds a suite unit tests (e.g. `<build_dir>/test/unitTests`)
+CMake also builds a suite of unit tests (e.g. `<build_dir>/test/unitTests`)
 and integration tests (`<build_dir>/test/integrationTests`). The build
 directories are `builds/gcc-<hash>` and `builds/oneapi-<hash>`.
 
@@ -298,8 +298,8 @@ To run a solver example:
 ```
 ./scripts/run_eg.sh  [solver_name] [example_name] <-n num_MPI> <-b build_dir>
 ```
-which will look for the solver executable in the most recently modified build
-directory (or symlink) in `builds`, unless an alternative location is supplied
+which will look for the solver executable in the most recently modified install
+directory (`views`), unless an alternative location is supplied
 with `-b`.  Output is generated in `runs/<solver_name>/<example_name>`.
 
 ## Address Sanitizers
