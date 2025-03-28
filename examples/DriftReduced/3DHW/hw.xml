@@ -97,10 +97,13 @@
                 <P VAR="phi" VALUE="[4]" />
             </REGION>
         </BOUNDARYCONDITIONS>
-        <FUNCTION NAME="InitialConditions">
+        <!-- <FUNCTION NAME="InitialConditions">
             <E VAR="ne"  DOMAIN="0" VALUE="6*exp((-x*x-y*y)/(s*s))*sin(4*PI*z/10)" />
             <E VAR="w"   DOMAIN="0" VALUE="(4*exp((-x*x-y*y)/(s*s))*(-s*s+x*x+y*y)/s^4)*sin(4*PI*z/10)" />
             <E VAR="phi" DOMAIN="0" VALUE="exp(-(x*x+y*y)/(s*s))*sin(4*PI*z/10)" />
+        </FUNCTION> -->
+        <FUNCTION NAME="InitialConditions">
+            <F VAR="ne,w,phi" FILE="ICs.rst" />
         </FUNCTION>
     </CONDITIONS>
 </NEKTAR>

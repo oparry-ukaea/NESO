@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<NEKTAR>
+    <Metadata>
+        <Provenance>
+            <GitBranch></GitBranch>
+            <GitSHA1></GitSHA1>
+            <Hostname>ws-ic-z6901-09</Hostname>
+            <NektarVersion>5.7.0</NektarVersion>
+            <Timestamp>20-Mar-2025 11:21:47</Timestamp>
+        </Provenance>
+        <ChkFileNum>0</ChkFileNum>
+        <SessionName0>hw_xml/P0000000.xml</SessionName0>
+        <Time>0</Time>
+    </Metadata>
+    <Partition FileName="P0000000.fld">5-6,15-16,25-26,35-36,45-46,55-56,65-66,75-76,85-86,95-96,105-106,115-116,125-126,135-137,145-146</Partition>
+    <Partition FileName="P0000001.fld">7-9,17-19,27-29,37-39,47-49,57-59,67-69,77-79,87-89,97-99,147</Partition>
+    <Partition FileName="P0000002.fld">107-109,118-119,128-129,138-139,148-149,158-159,168-169,178-179,188-189,198-199,208-209,218-219,228-229,238-239,248-249</Partition>
+    <Partition FileName="P0000003.fld">117,127,155-157,165-167,175-177,185-187,195-197,205-207,215-217,225-227,235-237,245-247</Partition>
+    <Partition FileName="P0000004.fld">20-21,30-31,40-41,70-71,80-81,90-91,120-121,130-131,140-141,170-172,180-181,190-191,220-221,230-231,240-241</Partition>
+    <Partition FileName="P0000005.fld">32-34,42-44,82-84,92-94,132-134,142-144,182-184,192-194,222,232-234,242-244</Partition>
+    <Partition FileName="P0000006.fld">3-4,13-14,23-24,53-54,63-64,73-74,103-104,113-114,122-124,153-154,163-164,173-174,203-204,213-214,223-224</Partition>
+    <Partition FileName="P0000007.fld">0-2,10-12,22,50-52,60-62,72,100-102,110-112,150-152,160-162,200-202,210-212</Partition>
+</NEKTAR>
