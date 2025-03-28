@@ -22,14 +22,14 @@ TEST_F(DriftReducedRegTest, 2Din3DHW) {
  */
 
 TEST_F(DriftReducedRegTest, 2Din3DHW_fluid_only) {
-  set_tolerance(1e-7);
+  // set_tolerance(1e-7);
   run_and_regress();
 }
 
 TEST_F(DriftReducedRegTest, 2DRogersRicci) { run_and_regress(); }
 
 TEST_F(DriftReducedRegTest, 3DHW) {
-  set_tolerance(1e-9);
+  // set_tolerance(1e-9);
   run_and_regress();
 }
 
