@@ -1,23 +1,28 @@
-# This script formats the source files in NESO. This script should be ran from
-# the root of the git repository. This script should be run as:
-#
-#   bash format_all.sh
-#
-# to format all source files. 
+#!/usr/bin/env bash
+REPO_ROOT=$( cd -- "$(realpath $( dirname -- "${BASH_SOURCE[0]}" )/..)" &> /dev/null && pwd )
 
-if [[ -f .clang-format && -f .cmake-format ]]; then
+clang_fmt_cmd="clang-format"
+cmake_fmt_cmd="cmake-format"
+python_fmt_cmd="black"
+
+for cmd_ in $clang_fmt_cmd $cmake_fmt_cmd $python_fmt_cmd; do
+    if ! command -v "$cmd_" &> /dev/null; then
+        echo "$0: Command $cmd_ not found on your path"
+        exit 2
+    fi
+done
+
+if [[ -f "$REPO_ROOT/.clang-format" && -f "$REPO_ROOT/.cmake-format" ]]; then
     # clang-format
-    find ./src ./include ./test ./solvers -iname \*.hpp -o -iname \*.cpp | xargs clang-format -i
+    find "$REPO_ROOT/src" "$REPO_ROOT/include" "$REPO_ROOT/test" "$REPO_ROOT/solvers" -iname \*.hpp -o -iname \*.cpp | xargs $clang_fmt_cmd -style=file:"$REPO_ROOT/.clang-format" -i
     # cmake-format
-    cmake-format -c .cmake-format -i CMakeLists.txt # Do this one on it's own so we don't go into build etc
-    find ./src ./include ./test ./solvers -iname CMakeLists.txt | xargs cmake-format  -c .cmake-format -i
+    cmake-format -c "$REPO_ROOT/.cmake-format" -i "$REPO_ROOT/CMakeLists.txt" # Do this one on it's own so we don't go into build etc
+    find "$REPO_ROOT/src" "$REPO_ROOT/include" "$REPO_ROOT/test" "$REPO_ROOT/solvers" -iname CMakeLists.txt | xargs $cmake_fmt_cmd -c "$REPO_ROOT/.cmake-format" -i
     # black
-    find ./python -iname \*.py | xargs black
+    find "$REPO_ROOT/python" -iname \*.py | xargs $python_fmt_cmd
     exit 0;
 else
-    echo "ERROR: The files .clang-format and .cmake-format do not exist. Please
-       check this script is executed from the root directory of the git
-       repository."
+    echo "ERROR: The files .clang-format and .cmake-format were not found in the repository root."
     exit 1;
 fi
 
