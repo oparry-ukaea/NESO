@@ -1,0 +1,1 @@
+mpirun -np <NMPI> <SOLVER_EXEC> two_stream_conditions.xml two_stream_mesh.xml
