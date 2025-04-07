@@ -141,7 +141,7 @@ The default initial conditions are
 
 #### Boundary conditions
 
-All fields have Dirichlet for the potential on all boundaries; (homogeneous) Neumann for all other fields.
+All fields have Dirichlet boundary conditions with the following values:
 
 | Field    | Dirichlet BC value |
 | -------- | ------------------ |
@@ -150,15 +150,13 @@ All fields have Dirichlet for the potential on all boundaries; (homogeneous) Neu
 | $\omega$ | 0                  |
 | $\phi$   | $\phi_{\rm bdy}$   |
 
-$\phi_{\rm bdy}$ is set to 0.03 by default. This value was chosen to keep the value of $\phi$ relatively flat outside the central source region and avoid boundary layers forming in $\omega$ and $\phi$. 
+$\phi_{\rm bdy}$ is set to 0.03 by default. This value ensures that $\phi$ remains relatively flat outside the central source region and avoids boundary layers forming in $\omega$ and $\phi$. 
 
 #### Domain and mesh
 
 The mesh is a square with the origin at the centre and size $\sqrt{T_{e0}/m_i}/\Omega{ci} = 100\rho_{s0} = 1.2$ m.
 
 By default, there are 64x64 quadrilateral (square) elements, giving sizes of 1.875 cm = 25/16 $\rho_{s0}$
-
-Default res is substantially lower than that used in the finite difference model, which has 1024x1024 elements. (I think)
 
 #### Normalisation
 
@@ -199,15 +197,14 @@ where $\rho_{s0}$, $r_s$ and $Ls$ have the (SI) values listed in the tables abov
 
 #### Simulation time
 
-Based on Fig 4. of Rogers & Ricci, the simulation time for the 3D version might be $\sim 12$ in normalised units (= $500~{\rm{\mu}s}$), but it's not clear if the full duration is being shown. 
-$500~{\rm{\mu}s}$ doesn't seem enough time for anything interesting to happen - we (arbitrarily) choose to run for ten times longer - $5~{\rm ms}$, or  $\sim 120$ in normalised units.
-
-#### Decoupled density
-Note that, since the density only features in equation 4, it is effectively decoupled from the rest of system. Implementing equations 5-7 only is therefore sufficient to capture most of the interesting behaviour.
+The default simulation time is $\sim 12$ in normalised units (= $500~{\rm{\mu}s}$).
 
 #### Example output
 
+Processing the final checkpoint of the simulation and rendering it in Paraview should produce output resembling the image below:
+
 !["Density in the final output of the 2DRogersRicci example."](../../docs/media/rr2D_implicit_n_final.png)
+Density in normalised units, run with the implicit DG implementation on a 64x64 quad mesh for 12 normalised time units (5 ms).
 
 ### 3DHW (unfinished)
 
