@@ -87,10 +87,11 @@ The example can be run with
     ./scripts/run_eg.sh Diffusion cwipi
     
 
-## Outputs (fix image)
+## Outputs
 Outputs from the solver are written as Nektar++ checkpoint (`.chk`) files.
 The easiest way to visualise them is to convert them to vtu format and inspect them in Paraview.
 
 The final state of both examples should look like this:
 
-<img src="../../docs/media/unsteady_aniso_final.png" align="left" width="400" style="margin-right: 1.5rem">
+!["Field 'u in the final output of the unsteady_aniso example.](../../docs/media/unsteady_aniso_final.png)
+<!-- align="left" width="400" style="margin-right: 1.5rem" -->

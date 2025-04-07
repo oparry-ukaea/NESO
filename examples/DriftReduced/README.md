@@ -207,17 +207,7 @@ Note that, since the density only features in equation 4, it is effectively deco
 
 #### Example output
 
-<figure>
-  <img src="../../docs/media/rr2D_64x64_CG_temperature.gif" align="left" width="50%" >
-  <img src="../../docs/mediamedia/rr2D_64x64_CG_vorticity.gif" align="left" width="50%" >
-  <figcaption>Temperature (left) and vorticity (right) in normalised units, run with the CG implementation on a 64x64 quad mesh for 5 ms (120 normalised time units).</figcaption>
-</figure>
-
-<figure>
-  <img src="../../docs/mediamedia/rr2D_64x64_DG_temperature.gif" align="left" width="50%" >
-  <img src="../../docs/mediamedia/rr2D_64x64_DG_vorticity.gif" align="left" width="50%" >
-  <figcaption>Temperature (left) and vorticity (right) in normalised units, run with the DG implementation on a 64x64 quad mesh for 5 ms (120 normalised time units).</figcaption>
-</figure>
+!["Density in the final output of the 2DRogersRicci example."](../../docs/media/rr2D_implicit_n_final.png)
 
 ### 3DHW (unfinished)
 
