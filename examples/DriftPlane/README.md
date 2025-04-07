@@ -14,3 +14,8 @@ To build the solver executable, follow the instructions for building NESO in the
 
 #### Equations (unfinished)
 
+
+#### Output
+
+
+!["Density in the final output of the blob2D example.](../../docs/media/blob2D_ne_final.png)
