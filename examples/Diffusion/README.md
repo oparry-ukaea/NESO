@@ -29,6 +29,7 @@ $$
 $$
 
 For a plasma, $\kappa_{\parallel}$, $\kappa_{\perp}$ and $\kappa_{\perp}$ can be identified with Braginskii transport coefficients.
+
 These coefficients are very different for electrons and ions, but considering the regime where B$~\sim1 T$ and $T_e~\sim~T_i$, we have $\kappa_{\parallel}\simeq \kappa_{\parallel}^e$ and $\kappa_{\perp}\simeq \kappa_{\perp}^i$, such that
 
 $$
@@ -38,53 +39,73 @@ $$
 \end{align} 
 $$
 
-In 2D, $\kappa_{\wedge}^e = \kappa_{\wedge}^i \simeq 0$.
+and for 2D problems: $\kappa_{\wedge}^e = \kappa_{\wedge}^i \simeq 0$.
 
 
 ## Model parameters
 
-The table below shows a selection of the model parameters can be modified in the XML configuration files. 
+The table below shows a selection of the model parameters that can be modified in the XML configuration files. 
 
-| Parameter     | Description                                     | Reference value        |
-| ------------- | ----------------------------------------------- | ---------------------- |
-| A = m_i/m_p   | Ion mass in proton masses                       | 1                      |
-| B             | Magnitude of the magnetic field                 | 1.0 T                  |
-| n             | Number density of ions/electrons                | 10$^{18}$ ms$^{-1}$    |
-| T             | (Electron) temperature                          | 116050 K ($\sim$10 eV) |
-| theta         | Angle between the magnetic field and the x-axis | 2.0                    |
-| Z             | Ion charge state                                | +1                     |
-| lambda        | Coulomb logarithm                               | 13                     |
-| TimeStep      | Time step size                                  | 0.001                  |
-| NumSteps      | Total number of time steps                      | 5                      |
-| IO_CheckSteps | Number of time steps between outputs            | 1                      |
+| Parameter     | Description                                                | Reference value        |
+| ------------- | ---------------------------------------------------------- | ---------------------- |
+| A = m_i/m_p   | Ion mass in proton masses                                  | 1                      |
+| B             | Magnitude of the magnetic field                            | 1.0 T                  |
+| n             | Number density of ions/electrons                           | 10$^{18}$ ms$^{-1}$    |
+| T             | (Electron) temperature                                     | 116050 K ($\sim$10 eV) |
+| theta         | Angle between the magnetic field and the x-axis in degrees | 2.0                    |
+| Z             | Ion charge state                                           | +1                     |
+| lambda        | Coulomb logarithm                                          | 13                     |
+| TimeStep      | Time step size                                             | 0.001                  |
+| NumSteps      | Total number of time steps                                 | 5                      |
+| IO_CheckSteps | Number of time steps between outputs                       | 1                      |
 
 
-## Implementation (unfinished)
+## Implementation
 
-The anisotropic diffusion problem is solved on a square mesh of quads.
-Mention
-- CG
-- Timestepping: BDFImplicitOrder1
-- Conj Grad iterative solve with diagonal preconditioner
-- ICs: tanh profile on left-hand edge:
+In both examples, the anisotropic diffusion problem is solved on a square mesh of 80x80 quads using a Continuous Galerkin discretisation.
+
+The initial conditions have a top-hat like profile on the left edge of the domain:
+
 $$
-0.5 + 0.5 * tanh(a*(y-77)) * tanh(a*(23-y))
+\begin{align}
+T = 0.5 + 0.5 * tanh(a*(y-77)) * tanh(a*(23-y))
+\end{align}
 $$
+
+The systems are solved using a Conjugate Gradient method and a simple Diagonal preconditioner.
+Timestepping is performed with a first-order BDF method.
 
 ## Examples
 
-### unsteady_aniso (unfinished)
-<!-- Initial conditions
-General setup -->
-The example can be run with
+### unsteady_aniso
+
+Configuration files for the  `unsteady_aniso` example can be found in `examples/Diffusion/unsteady_aniso`.
+The Gmsh file, `square.geo`, file is supplied in case users wish to modify the mesh, but the simulations only requires the xml files to run.
+The easiest way to execute the example is with
 
     ./scripts/run_eg.sh Diffusion unsteady_aniso
 
-### cwipi (unfinished)
-<!-- Purpose -->
-The example can be run with
+which makes a copy of the example directory and executes the Diffusion solver in that location, using the command in `examples/Diffusion/unsteady_aniso/run_cmd_template.txt`.
+
+### cwipi
+
+Configuration files for the  `cwipi` example can be found in `examples/Diffusion/cwipi`.
+
+Like the previous example, an unsteady anisotropic diffusion problem is solved. 
+Unlike the previous example, the process is split into two tasks, performed by separate executables and coupled via the [CWIPI framework](https://w3.onera.fr/cwipi/en).
+The first executable computes the diffusion tensor based on the parameters set in its configuration file.
+This tensor is then sent, via MPI, to the second executable, which uses it to evolve the system from the initial conditions and generate a solution.
+Each executable can itself run using multiple MPI processes.
+The MPI command used to run the coupled problem can be found in `examples/Diffusion/cwipi/run_cmd_template.txt`, but the easiest way to execute the example is: 
 
     ./scripts/run_eg.sh Diffusion cwipi
+
+N.B. The Diffusion solver occasionally hangs during the initialisation stage when running the `cwipi` example.
+Rerunning the command above should work around the issue.
+
+While this example is somewhat artificial, it serves to demonstrate how Nektar++, via CWIPI can be used to couple independent executables.
+Other possible applications include running solvers in neighbouring domains and coupling them via boundary conditions with each domain representing a different material.
+This could be used to model, for example, plasma turbulence in the tokamak edge and the resulting heat diffusion into the first wall. 
     
 
 ## Outputs
