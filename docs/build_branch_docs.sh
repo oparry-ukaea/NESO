@@ -23,7 +23,7 @@ echo "Branches/tags in switcher are: $BRANCHES"
 cp ./redirect_index.html "${OUTPUT_DIR}/index.html"
 
 # clone the repo into a temporary place
-REPO=https://github.com/ExCALIBUR-NEPTUNE/NESO.git
+REPO=https://github.com/oparry-ukaea/NESO.git
 mkdir -p /tmp/repo-checkout
 rm -rf "/tmp/repo-checkout/NESO"
 cd /tmp/repo-checkout
