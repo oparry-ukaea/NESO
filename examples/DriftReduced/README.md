@@ -1,37 +1,29 @@
 # The DriftReduced solver
 
-## Overview
-The following describes the examples that are currently available for the `DriftReduced` solver.
-<!-- To build the solver executable, follow the instructions for building NESO in the [top-level README](../../README.md). -->
-
-<!--
-## Prerequisites
-
-In order to generate Nektar++ xml meshes, you'll need `gmsh` and `NekMesh`.
-If NESO was installed with spack, then `NekMesh` should already be built.  It can be added to your path with:
-
-    export PATH=$PATH:$(spack location -i nektar%[compiler])/bin
-
-where [compiler] is either 'gcc' or 'oneapi' (both should work if 'spack install' completed without errors.)
--->
+## Overview (improve)
+The `DriftReduced` solver provides a number of simple models for 2D and 3D plasma turbulence.
+The following subsections describe the examples that are currently available:
 
 ## Examples
 
-### 2DHW (unfinished)
+### 2DHW (improve)
 
-### 2Din3DHW_fluid_only
+The example can be run with
 
-Solves the 2D Hasegawa-Wakatani (HW) equations on a 3D domain. That is:
+    ./scripts/run_eg.sh DriftReduced 2DHW
+
+#### Equations (improve)
+
+Solves the 2D Hasegawa-Wakatani (HW) equations. That is:
 
 $$
 \begin{align}
-    \frac{\partial n}{\partial t} + [\phi, n]  & = \alpha (\phi - n) - \kappa \frac{\partial\phi}{\partial y} \\
-    \frac{\partial{\zeta}}{\partial t} + [\phi, \zeta] & = \alpha (\phi - n)
+    \frac{\partial n}{\partial t} + [\phi, n]  & = \alpha (\phi - n) - \kappa \frac{\partial\phi}{\partial y} &~~~(1)\\
+    \frac{\partial{\zeta}}{\partial t} + [\phi, \zeta] & = \alpha (\phi - n) &~~~(2)
 \end{align}
 $$
 
 where $n$ is number density, $\zeta$ is vorticity and $\phi$ is the electrostatic potential.
-
 $[a,b]$ is the Poisson bracket operator, defined as
 
 $$
@@ -41,47 +33,78 @@ b}{\partial x}.
 \end{equation}
 $$
 
-<!--
-Generate the mesh with
+Note that equations (1) and (2) represent the "unmodified" form of the HW equations, which exclude so called *zonal flows* (see e.g. [this webpage](https://ammar-hakim.org/sj/je/je17/je17-hasegawa-wakatani.html#the-modified-hasegawa-wakatani-system) for further explanation.)
 
-    ./scripts/geo_to_xml.sh examples/DriftReduced/2Din3DHW_fluid_only/cuboid.geo -x 1,2 -y 3,4 -z 5,6 -o cuboid_5x5x10_5x5x10hexes.xml
--->
+
+#### Model parameters (unfinished)
+#### Implementation (unfinished)
+<!-- Domain -->
+<!-- Mesh, elements -->
+<!-- Solver opts -->
+<!-- Timestepping -->
+<!-- ICs -->
+#### Outputs (unfinished)
+
+<!-- ------------------------------------------------------------------------------------------ -->
+
+### 2Din3DHW_fluid_only (improve)
+
+Solves the 2D HW equations, (1) and (2), in a 3D domain. 
 
 The example can be run with
 
     ./scripts/run_eg.sh DriftReduced 2Din3DHW_fluid_only
 
-This script expects to find mpirun on the path and executes with four MPI ranks by default. It looks for a solver executable in the most recently modified spack-build* directory, but this can be overridden using the '-b' option.
+#### Model parameters (unfinished)
+#### Implementation (unfinished)
+<!-- Domain -->
+<!-- Mesh, elements -->
+<!-- Solver opts -->
+<!-- Timestepping -->
+<!-- ICs -->
+
+#### Outputs (unfinished)
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
 
 ### 2Din3DHW
 
 Solves equations (1) and (2), as in the previous example, but also enables a system of neutral particles that are coupled to the fluid solver. Particles deposit density into the (plasma) fluid via ionization.
 
-<!--
-Generate the mesh with
-
-    ./scripts/geo_to_xml.sh examples/DriftReduced/2Din3DHW/cuboid.geo -x 1,2 -y 3,4 -z 5,6 -o cuboid_5x5x10_8x8x16hexes.xml
--->
-
 The example can be run with
 
     ./scripts/run_eg.sh DriftReduced 2Din3DHW
 
-This script expects to find mpirun on the path and executes with four MPI ranks by default. It looks for a solver executable in the most recently modified spack-build* directory, but this can be overridden using the '-b' option.
+#### Model parameters (unfinished)
+#### Implementation (unfinished)
+<!-- Domain -->
+<!-- Mesh, elements -->
+<!-- Solver opts -->
+<!-- Timestepping -->
+<!-- ICs -->
+
+#### Outputs (unfinished)
+
+<!-- ------------------------------------------------------------------------------------------ -->
 
 ### 2DRogersRicci
 
-Model based on the **2D** finite difference implementation described in "*Low-frequency turbulence in a linear magnetized plasma*", B.N. Rogers and P. Ricci, PRL **104**, 225002, 2010 ([link](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.104.225002)); see equations 5-7.
+Model based on the **2D** (finite difference) implementation described in "*Low-frequency turbulence in a linear magnetized plasma*", B.N. Rogers and P. Ricci, PRL **104**, 225002, 2010 ([link](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.104.225002)); see equations (7)-(9).
+
+The example can be run with
+
+    ./scripts/run_eg.sh DriftReduced 2DRogersRicci
 
 #### Equations
 
-In SI units:
+In SI units, the equations are:
 
 $$
 \begin{aligned}
-\frac{d n}{dt} &= -\sigma\frac{n c_s}{R}\exp(\Lambda - e\phi/T_e) + S_n ~~~(1)\\
-\frac{d T_e}{dt} &= -\sigma\frac{2}{3}\frac{T_e c_s}{R}\left[1.71\exp(\Lambda - e\phi/T_e)-0.71\right] + S_T ~~~(2)\\
-\frac{d \nabla^2\phi}{dt} &= \sigma \frac{c_s m_i \Omega_{ci}^2}{eR}\left[1-\exp(\Lambda - e\phi/T_e)\right] ~~~(3)\\
+\frac{d n}{dt} &= -\sigma\frac{n c_s}{R}\exp(\Lambda - e\phi/T_e) + S_n &~~~(3)\\
+\frac{d T_e}{dt} &= -\sigma\frac{2}{3}\frac{T_e c_s}{R}\left[1.71\exp(\Lambda - e\phi/T_e)-0.71\right] + S_T &~~~(4)\\
+\frac{d \nabla^2\phi}{dt} &= \sigma \frac{c_s m_i \Omega_{ci}^2}{eR}\left[1-\exp(\Lambda - e\phi/T_e)\right] &~~~(5)\\
 \end{aligned}
 $$
 
@@ -129,7 +152,7 @@ Derived values
 | $L_s$       | $0.5\rho_{s0}$           | 6e-3 m                              |                                                   |
 | $r_s$       | $20\rho_{s0}$            | 0.24 m                              | Approx radius of the LAPD plasma chamber          |
 
-#### Initial conditions
+#### Initial conditions (combine)
 
 The default initial conditions are
 
@@ -139,7 +162,7 @@ The default initial conditions are
 | T        | $6\times10^{-4}$ eV ($10^{-4}$ normalised)     |
 | $\omega$ | 0                                              |
 
-#### Boundary conditions
+#### Boundary conditions (combine)
 
 All fields have Dirichlet boundary conditions with the following values:
 
@@ -152,7 +175,7 @@ All fields have Dirichlet boundary conditions with the following values:
 
 $\phi_{\rm bdy}$ is set to 0.03 by default. This value ensures that $\phi$ remains relatively flat outside the central source region and avoids boundary layers forming in $\omega$ and $\phi$. 
 
-#### Domain and mesh
+#### Domain and mesh (combine)
 
 The mesh is a square with the origin at the centre and size $\sqrt{T_{e0}/m_i}/\Omega{ci} = 100\rho_{s0} = 1.2$ m.
 
@@ -177,9 +200,9 @@ The normalised forms of the equations are:
 
 $$
 \begin{align}
-\frac{\partial n}{\partial t} &= 40\left[\phi,n\right] -\frac{1}{24}\exp(3 - \phi/T_e)n + S_n  ~~~({\bf 4}) \\
-\frac{\partial T_e}{\partial t} &= 40\left[\phi,T_e\right] -\frac{1}{36}\left[1.71\exp(3 - \phi/T_e)-0.71\right]T_e + S_T  ~~~({\bf 5}) \\
-\frac{\partial  \nabla^2\phi}{\partial t} &= 40\left[\phi,\nabla^2\phi\right] + \frac{1}{24}\left[1-\exp(3 - \phi/T_e)\right] ~~~({\bf 6})\\
+\frac{\partial n}{\partial t} &= 40\left[\phi,n\right] -\frac{1}{24}\exp(3 - \phi/T_e)n + S_n  &~~~(6) \\
+\frac{\partial T_e}{\partial t} &= 40\left[\phi,T_e\right] -\frac{1}{36}\left[1.71\exp(3 - \phi/T_e)-0.71\right]T_e + S_T  &~~~(7) \\
+\frac{\partial  \nabla^2\phi}{\partial t} &= 40\left[\phi,\nabla^2\phi\right] + \frac{1}{24}\left[1-\exp(3 - \phi/T_e)\right] &~~~(8)\\
 \nabla^2\phi &= \omega ~~({\bf 7}) \\
 \end{align}
 $$
@@ -195,18 +218,23 @@ $$
 where $\rho_{s0}$, $r_s$ and $Ls$ have the (SI) values listed in the tables above.
 <!-- This system can be be obtained by applying the normalisation factors, then simplifying; see [here](./details/rogers-ricci-2d-normalised.md) for details. Note that the prime notation used in the derivations is dropped in the equations above for readability. -->
 
-#### Simulation time
+#### Simulation time (combine)
 
 The default simulation time is $\sim 12$ in normalised units (= $500~{\rm{\mu}s}$).
 
-#### Example output
+#### Implementation (unfinished)
+Combine previous subsections
+
+#### Outputs
 
 Processing the final checkpoint of the simulation and rendering it in Paraview should produce output resembling the image below:
 
-!["Density in the final output of the 2DRogersRicci example."](../../docs/media/rr2D_implicit_n_final.png)
+!["2Drr_implicit_n_final"](../../docs/media/rr2D_implicit_n_final.png)
 Density in normalised units, run with the implicit DG implementation on a 64x64 quad mesh for 12 normalised time units (5 ms).
 
 ### 3DHW (unfinished)
+
+<!-- ------------------------------------------------------------------------------------------ -->
 
 ## Diagnostics
 For the Hasegawa-Wakatani examples (`2DHW`,` 2Din3DHW_fluid_only`, `2Din3DHW`, `3DHW`), the solver can be made to output the total fluid energy ($E$) and enstrophy ($W$), which are defined as:  
@@ -222,8 +250,8 @@ In the `2Din3DHW_fluid_only` example, the expected growth rates of $E$ and $W$ c
 
 $$
 \begin{align}
-\frac{dE}{dt} &= \Gamma_n-\Gamma_\alpha \\
-\frac{dW}{dt} &= \Gamma_n
+\frac{dE}{dt} &= \Gamma_n-\Gamma_\alpha &~~(8)\\
+\frac{dW}{dt} &= \Gamma_n &~~(9)
 \end{align}
 $$
 
@@ -236,7 +264,7 @@ $$
 \end{align}
 $$
 
-To change the frequency of this output modify the value of `growth_rates_recording_step` inside the `<PARAMETERS>` node in the example's configuration file.
-When that parameter is set, the values of $E$ and $W$ are written to `<run_directory>/growth_rates.h5` at each simulation step $^*$.  Expected values of $\frac{dE}{dt}$ and $\frac{dW}{dt}$, calculated with equations (6) and (7) are also written to file, but note that these are only meaningful when particle coupling is disabled.
+To change the frequency of this output, modify the value of `growth_rates_recording_step` inside the `<PARAMETERS>` node in the example's configuration file.
+When that parameter is set, the values of $E$ and $W$ are written to `<run_directory>/growth_rates.h5` at each simulation step $^*$.  Expected values of $\frac{dE}{dt}$ and $\frac{dW}{dt}$, calculated with equations (8) and (9) are also written to file, but note that these are only meaningful when particle coupling is disabled.
 
 $^*$ Note that the file will appear empty until the file handle is closed at the end of simulation.
