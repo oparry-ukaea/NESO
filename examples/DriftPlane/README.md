@@ -37,6 +37,8 @@ in order to capture the behaviour of the plasma at the ends of the field lines, 
 
 A more detailed discussion of the model can be found in section 2.1 of the [M6c.3 project NEPTUNE report](https://excalibur-neptune.github.io/Documents/CD-EXCALIBUR-FMS0074-M6c.3_ExcaliburFusionModellingSystemComplementaryActionsCodeIntegrationAcceptanceOpera.html).
 
+#### Model parameters (unfinished)
+
 #### Implementation
 
 In the DriftPlane solver, the blob2D system is discretised using a Discontinous Galerkin formulation for the density and vorticity and Continuous Galerkin for the potential.
