@@ -10,12 +10,13 @@ The following describes the examples that are currently available for the `Drift
 
 ### blob2D
 
-#### Model description and equations
-
 The blob2D example was inspired by the BOUT++/[Hermes-3 demo of the same name.](https://hermes3.readthedocs.io/en/latest/examples.html#blob2d) 
 It tracks the formation of a plasma filament from an overdense "blob", subject to a diamagnetic drift force.
 
 The model considers a single, isothermal fluid evolving in a square domain where the x-axis represents the radial coordinate in a tokamak and the $(x,y)$ plane is a 2D slice at a particular toroidal angle. Moving to the right through the domain corresponds to moving further towards the outboard side of the tokamak. 
+
+#### Equations
+
 The equations are: 
 
 $$
@@ -32,7 +33,7 @@ $$
 where $n$ is the electron density, $\omega$ is the electron vorticity and $\phi$ is the electrostatic potential.
 The diamagnetic drift term is $\frac{\partial n_e}{\partial y}$.
 $\frac{n_e \phi}{L_{\parallel}}$ ($L_{\parallel}$ being the connection length) is a "connection term" that stands in for the divergence of the sheath current, $\nabla \cdot {\bf j}_{sh}$.
-in order to capture the behaviour of the plasma at the ends of the field lines, perpendicular to the simulation domain (the *"drift-plane"*).
+in order to capture the behaviour of the plasma at the ends of the field lines, perpendicular to the simulation domain (the *drift-plane*).
 
 A more detailed discussion of the model can be found in section 2.1 of the [M6c.3 project NEPTUNE report](https://excalibur-neptune.github.io/Documents/CD-EXCALIBUR-FMS0074-M6c.3_ExcaliburFusionModellingSystemComplementaryActionsCodeIntegrationAcceptanceOpera.html).
 
