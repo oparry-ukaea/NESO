@@ -89,6 +89,9 @@ which makes a copy of the example directory and executes the Diffusion solver in
 
 ### cwipi
 
+    N.B. To run the `cwipi` example, NESO must be built with configuration option -DNESO_BUILD_CWIPI_EXAMPLES=ON and Nektar++ must have been built with option -DNEKTAR_USE_CWIPI=ON.
+    The easiest way to enable all required options is to build the 'cwipi' variant of NESO via spack; i.e. spack install neso+cwipi
+
 Configuration files for the  `cwipi` example can be found in `examples/Diffusion/cwipi`.
 
 Like the previous example, an unsteady anisotropic diffusion problem is solved. 
@@ -100,8 +103,8 @@ The MPI command used to run the coupled problem can be found in `examples/Diffus
 
     ./scripts/run_eg.sh Diffusion cwipi
 
-N.B. The Diffusion solver occasionally hangs during the initialisation stage when running the `cwipi` example.
-Rerunning the command above should work around the issue.
+    N.B. The Diffusion solver occasionally hangs during the initialisation stage when running the `cwipi` example.  
+    Rerunning the command above should work around the issue.
 
 While this example is somewhat artificial, it serves to demonstrate how Nektar++, via CWIPI can be used to couple independent executables.
 Other possible applications include running solvers in neighbouring domains and coupling them via boundary conditions with each domain representing a different material.
