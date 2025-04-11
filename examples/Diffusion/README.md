@@ -117,5 +117,8 @@ The easiest way to visualise them is to convert them to vtu format and inspect t
 
 The final state of both examples should look like this:
 
-!["Field 'u in the final output of the unsteady_aniso example.](../../docs/media/unsteady_aniso_final.png)
+!["unsteady_aniso_final"](../../docs/media/unsteady_aniso_final.png)
+
+*Field 'u' in the final output of the unsteady_aniso example.*
+
 <!-- align="left" width="400" style="margin-right: 1.5rem" -->
