@@ -69,7 +69,7 @@ The example can be run with
 
 This script expects to find mpirun on the path and executes with four MPI ranks by default. It looks for a solver executable in the most recently modified spack-build* directory, but this can be overridden using the '-b' option.
 
-### 2DRogersRicci (unfinished)
+### 2DRogersRicci
 
 Model based on the **2D** finite difference implementation described in "*Low-frequency turbulence in a linear magnetized plasma*", B.N. Rogers and P. Ricci, PRL **104**, 225002, 2010 ([link](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.104.225002)); see equations 5-7.
 
@@ -236,7 +236,7 @@ $$
 \end{align}
 $$
 
-To change the frequency of this output modify the value of `growth_rates_recording_step` inside the `<PARAMETERS>` node in the example's configuration file`.
+To change the frequency of this output modify the value of `growth_rates_recording_step` inside the `<PARAMETERS>` node in the example's configuration file.
 When that parameter is set, the values of $E$ and $W$ are written to `<run_directory>/growth_rates.h5` at each simulation step $^*$.  Expected values of $\frac{dE}{dt}$ and $\frac{dW}{dt}$, calculated with equations (6) and (7) are also written to file, but note that these are only meaningful when particle coupling is disabled.
 
 $^*$ Note that the file will appear empty until the file handle is closed at the end of simulation.
