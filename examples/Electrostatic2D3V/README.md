@@ -1,22 +1,29 @@
 # The Electrostatic2D3V solver
 
-## Overview (unfinished)
+## Overview
 
-The theory behind the Electrostatic2D3V solver and the `two_stream` example can be found in NEPTUNE report [M4c.1: 1-D and 2-D Particle Models](https://excalibur-neptune.github.io/Documents/CD-EXCALIBUR-FMS0070-1.00-M4c.1_ExcaliburFusionModellingSystem.html)
+The theory behind the Electrostatic2D3V solver and the `two_stream` example can be found in NEPTUNE report [M4c.1: 1-D and 2-D Particle Models](https://excalibur-neptune.github.io/Documents/CD-EXCALIBUR-FMS0070-1.00-M4c.1_ExcaliburFusionModellingSystem.html); see section 2.2 in particular.
 
 ## Examples
 
-### two_stream (unfinished)
+### two_stream
 
-To run the executable first install `NESO` which will build the `Electrostatic2D3V` solver. After `NESO` is built the electrostatic solver can be ran as follows:
+The example can be run with
 
-```
-OMP_NUM_THREADS=1 mpirun -n 12 Electrostatic2D3V two_stream.xml rectangle1x0.02_20x1quads.xml
-```
+    ./scripts/run_eg.sh Electrostatic2D3V two_stream
 
-This should produce an output `Electrostatic2D3V_field_trajectory.h5` which can be plotted with
+#### Outputs and postprocessing
 
+Unlike other NESO examples, the Electrostatic2D3V solver doesn't generate Nektar++ checkpoint files.
+Instead it outputs `Electrostatic2D3V_field_trajectory.h5` which contains particle data in [H5Part](https://github.com/zoziha/h5part) format, a derivative of HDF5.
+This file can be visualised in (e.g.) Paraview or postprocessed using the supplied Python script, which plots the energy evolution and compares it to theory.
+To run the script, install all required Python packages, then pass it the Nektar++ configuration file and the .h5 file as arguments:
 ```
 pip install -r requirements.txt
-python3 plot_two_stream_energy.py two_stream.xml electrostatic_two_stream.h5
+python3 plot_two_stream_energy.py two_stream.xml Electrostatic2D3V_field_trajectory.h5
 ```
+
+The plots are written to `field_energy.pdf` and `all_energy.pdf` and are reproduced below for convenience:
+
+![blob2D_ne_final](../../docs/media/two_stream_field_energy.png)
+![blob2D_ne_final](../../docs/media/two_stream_all_energy.png)
