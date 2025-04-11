@@ -152,35 +152,6 @@ Derived values
 | $L_s$       | $0.5\rho_{s0}$           | 6e-3 m                              |                                                   |
 | $r_s$       | $20\rho_{s0}$            | 0.24 m                              | Approx radius of the LAPD plasma chamber          |
 
-#### Initial conditions (combine)
-
-The default initial conditions are
-
-| Field    | Default ICs (uniform)                          |
-| -------- | ---------------------------------------------- |
-| n        | $2\times10^{14} m^{-3}$ ($10^{-4}$ normalised) |
-| T        | $6\times10^{-4}$ eV ($10^{-4}$ normalised)     |
-| $\omega$ | 0                                              |
-
-#### Boundary conditions (combine)
-
-All fields have Dirichlet boundary conditions with the following values:
-
-| Field    | Dirichlet BC value |
-| -------- | ------------------ |
-| n        | $10^{-4}$          |
-| T        | $10^{-4}$          |
-| $\omega$ | 0                  |
-| $\phi$   | $\phi_{\rm bdy}$   |
-
-$\phi_{\rm bdy}$ is set to 0.03 by default. This value ensures that $\phi$ remains relatively flat outside the central source region and avoids boundary layers forming in $\omega$ and $\phi$. 
-
-#### Domain and mesh (combine)
-
-The mesh is a square with the origin at the centre and size $\sqrt{T_{e0}/m_i}/\Omega{ci} = 100\rho_{s0} = 1.2$ m.
-
-By default, there are 64x64 quadrilateral (square) elements, giving sizes of 1.875 cm = 25/16 $\rho_{s0}$
-
 #### Normalisation
 
 Normalisations follow those in Rogers & Ricci, that is:
@@ -218,12 +189,32 @@ $$
 where $\rho_{s0}$, $r_s$ and $Ls$ have the (SI) values listed in the tables above.
 <!-- This system can be be obtained by applying the normalisation factors, then simplifying; see [here](./details/rogers-ricci-2d-normalised.md) for details. Note that the prime notation used in the derivations is dropped in the equations above for readability. -->
 
-#### Simulation time (combine)
+#### Implementation
 
+The default initial conditions are
+
+| Field    | Default ICs (uniform)                          |
+| -------- | ---------------------------------------------- |
+| n        | $2\times10^{14} m^{-3}$ ($10^{-4}$ normalised) |
+| T        | $6\times10^{-4}$ eV ($10^{-4}$ normalised)     |
+| $\omega$ | 0                                              |
+
+All fields have Dirichlet boundary conditions with the following values:
+
+| Field    | Dirichlet BC value |
+| -------- | ------------------ |
+| n        | $10^{-4}$          |
+| T        | $10^{-4}$          |
+| $\omega$ | 0                  |
+| $\phi$   | $\phi_{\rm bdy}$   |
+
+$\phi_{\rm bdy}$ is set to 0.03 by default. This value ensures that $\phi$ remains relatively flat outside the central source region and avoids boundary layers forming in $\omega$ and $\phi$. 
+
+The mesh is a square with the origin at the centre and size $\sqrt{T_{e0}/m_i}/\Omega{ci} = 100\rho_{s0} = 1.2$ m.
+By default, there are 64x64 quadrilateral (square) elements, giving sizes of 1.875 cm = 25/16 $\rho_{s0}$
 The default simulation time is $\sim 12$ in normalised units (= $500~{\rm{\mu}s}$).
-
-#### Implementation (unfinished)
-Combine previous subsections
+<!-- Element order -->
+<!-- Anything else mentioned in DriftPlane/Implementation? -->
 
 #### Outputs
 
