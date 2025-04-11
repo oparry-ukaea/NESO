@@ -2,7 +2,6 @@ NESO
 ====
 
 .. toctree::
-   :caption: Contents:
    :glob:
 
    concept
